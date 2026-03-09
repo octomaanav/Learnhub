@@ -37,12 +37,12 @@ export const Navbar = ({ currentProfile, onProfileChange, studentProfiles }: Nav
     <header className="bg-white/80 backdrop-blur-md border-b border-primary-100/50 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-linear-to-br from-primary-500 via-primary-600 to-teal-700 rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white text-base font-bold">A</span>
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-primary-500 border-2 border-primary-600 rounded-2xl flex items-center justify-center shadow-[0_4px_0_0_var(--color-primary-600)] transform -rotate-3 hover:rotate-0 transition-transform">
+              <span className="text-white text-xl font-bold font-display">A</span>
             </div>
-            <h1 className="text-xl font-bold bg-linear-to-r from-primary-700 to-secondary-600 bg-clip-text text-transparent">
-              Accessible Learning Platform
+            <h1 className="text-2xl font-bold text-surface-800 font-display tracking-tight">
+              Learn<span className="text-primary-500">Hub</span>
             </h1>
           </div>
 
@@ -54,11 +54,12 @@ export const Navbar = ({ currentProfile, onProfileChange, studentProfiles }: Nav
                 {currentProfile.grade} • Pace: {currentProfile.preferences.pace}
               </p>
             </div>
-            
+
             <select
+              aria-label="Switch Student Profile"
               value={currentProfile.id}
               onChange={(e) => handleProfileChange(e.target.value)}
-              className="px-4 py-2 bg-white border-2 border-primary-300 rounded-lg font-semibold text-surface-900 cursor-pointer hover:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all"
+              className="px-4 py-2 bg-white border-2 border-surface-200 rounded-2xl font-bold text-surface-700 cursor-pointer shadow-[0_4px_0_0_var(--color-surface-200)] hover:bg-surface-50 active:translate-y-1 active:shadow-none transition-all outline-none focus-visible:ring-2 focus-visible:ring-secondary-500"
             >
               {studentProfiles.map(profile => (
                 <option key={profile.id} value={profile.id}>
@@ -71,16 +72,18 @@ export const Navbar = ({ currentProfile, onProfileChange, studentProfiles }: Nav
             <div className="relative">
               <button
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="flex items-center gap-2 px-4 py-2 bg-linear-to-br from-primary-500 to-primary-600 text-white rounded-lg font-semibold hover:from-primary-600 hover:to-primary-700 transition-all shadow-md"
+                aria-expanded={isUserMenuOpen}
+                aria-haspopup="true"
+                className="btn-3d btn-3d-secondary flex items-center gap-3 px-5 py-2.5 bg-secondary-500 text-white rounded-2xl border-2 border-secondary-600 font-bold hover:bg-secondary-400"
               >
-                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-bold">{user?.name?.charAt(0).toUpperCase() || 'U'}</span>
+                <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center">
+                  <span className="text-sm font-bold font-display">{user?.name?.charAt(0).toUpperCase() || 'U'}</span>
                 </div>
-                <span className="text-sm">{user?.name || 'User'}</span>
-                <svg 
+                <span className="text-sm tracking-wide">{user?.name || 'User'}</span>
+                <svg
                   className={`w-4 h-4 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`}
-                  fill="none" 
-                  stroke="currentColor" 
+                  fill="none"
+                  stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />

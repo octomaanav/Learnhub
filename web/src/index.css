@@ -1,84 +1,86 @@
 @import "tailwindcss";
+@custom-variant dark (&:is(.dark, .dark *));
 
 /*
- * LearnHub Design System
+ * LearnHub Design System (Duolingo Style Offset)
  * 
- * Philosophy: Clean, warm, and approachable. 
- * Inspired by Apple's clarity and Google's functionality.
- * Every decision is intentional.
+ * Philosophy: Playful, cute, approachable, and highly interactive.
+ * Adheres strictly to Vercel Web Interface Guidelines.
  */
 
 /* Tailwind v4 Custom Theme - Color System */
 @theme {
-  /* PRIMARY: Teal/Cyan (trustworthy, modern, educational) */
-  --color-primary-50: #f0fdfa;
-  --color-primary-100: #ccfbf1;
-  --color-primary-200: #99f6e4;
-  --color-primary-300: #5eead4;
-  --color-primary-400: #2dd4bf;
-  --color-primary-500: #14b8a6;
-  --color-primary-600: #0d9488;
-  --color-primary-700: #0f766e;
-  --color-primary-800: #115e59;
-  --color-primary-900: #134e4a;
+  /* PRIMARY: Duolingo Green (playful, energetic, positive) */
+  --color-primary-50: #f1fced;
+  --color-primary-100: #def9d7;
+  --color-primary-200: #c2f1b4;
+  --color-primary-300: #9ce487;
+  --color-primary-400: #7ad45e;
+  --color-primary-500: #58cc02;
+  --color-primary-600: #46a302;
+  --color-primary-700: #357c01;
+  --color-primary-800: #285e01;
+  --color-primary-900: #1e4601;
 
-  /* SECONDARY: Vibrant Violet/Purple (creative, dynamic, playful) */
-  --color-secondary-50: #faf5ff;
-  --color-secondary-100: #f3e8ff;
-  --color-secondary-200: #e9d5ff;
-  --color-secondary-300: #d8b4fe;
-  --color-secondary-400: #c084fc;
-  --color-secondary-500: #a855f7;
-  --color-secondary-600: #9333ea;
-  --color-secondary-700: #7e22ce;
-  --color-secondary-800: #6b21a8;
-  --color-secondary-900: #581c87;
+  /* SECONDARY: Sky Blue (creative, learning, airy) */
+  --color-secondary-50: #ecf9ff;
+  --color-secondary-100: #d5f1ff;
+  --color-secondary-200: #b1e5ff;
+  --color-secondary-300: #81d4ff;
+  --color-secondary-400: #4fbfff;
+  --color-secondary-500: #1cb0f6;
+  --color-secondary-600: #1899d6;
+  --color-secondary-700: #147cb0;
+  --color-secondary-800: #10648c;
+  --color-secondary-900: #0d5071;
 
-  /* TERTIARY: Coral/Warm Orange (warmth, action, excitement) */
-  --color-tertiary-50: #fff7ed;
-  --color-tertiary-100: #ffedd5;
-  --color-tertiary-200: #fed7aa;
-  --color-tertiary-300: #fdba74;
-  --color-tertiary-400: #fb923c;
-  --color-tertiary-500: #f97316;
-  --color-tertiary-600: #ea580c;
-  --color-tertiary-700: #c2410c;
-  --color-tertiary-800: #9a3412;
-  --color-tertiary-900: #7c2d12;
+  /* TERTIARY: Golden Yellow (rewards, streaks, joy) */
+  --color-tertiary-50: #fffbea;
+  --color-tertiary-100: #fff6c9;
+  --color-tertiary-200: #ffef98;
+  --color-tertiary-300: #ffe45d;
+  --color-tertiary-400: #ffd72b;
+  --color-tertiary-500: #ffc800;
+  --color-tertiary-600: #e5a300;
+  --color-tertiary-700: #ba7b00;
+  --color-tertiary-800: #945c00;
+  --color-tertiary-900: #784800;
 
-  /* SURFACE: Warm off-white with tint */
-  --color-surface-50: #fafaf8;
-  --color-surface-100: #f5f3f0;
-  --color-surface-200: #ede9e4;
-  --color-surface-300: #e0dbd4;
-  --color-surface-400: #d1cac3;
-  --color-surface-500: #a89f96;
-  --color-surface-600: #78716c;
-  --color-surface-700: #57534e;
-  --color-surface-800: #3f3935;
-  --color-surface-900: #27251f;
+  /* SURFACE: Very soft warm grays for backgrounds */
+  --color-surface-50: #ffffff;
+  --color-surface-100: #f7f7f7;
+  --color-surface-200: #e5e5e5;
+  --color-surface-300: #d1d1d1;
+  --color-surface-400: #a3a3a3;
+  --color-surface-500: #777777;
+  --color-surface-600: #555555;
+  --color-surface-700: #3f3f3f;
+  --color-surface-800: #2b2b2b;
+  --color-surface-900: #111111;
 
-  /* ACCENT: Emerald (growth, progress, success) */
-  --color-accent-50: #f0fdf4;
-  --color-accent-100: #dcfce7;
-  --color-accent-200: #bbf7d0;
-  --color-accent-300: #86efac;
-  --color-accent-400: #4ade80;
-  --color-accent-500: #22c55e;
-  --color-accent-600: #16a34a;
-  --color-accent-700: #15803d;
-  --color-accent-800: #166534;
-  --color-accent-900: #145231;
+  /* ACCENT: Keep Emerald compatible just in case, mapped to Primary for now */
+  --color-accent-50: #f1fced;
+  --color-accent-100: #def9d7;
+  --color-accent-200: #c2f1b4;
+  --color-accent-300: #9ce487;
+  --color-accent-400: #7ad45e;
+  --color-accent-500: #58cc02;
+  --color-accent-600: #46a302;
+  --color-accent-700: #357c01;
+  --color-accent-800: #285e01;
+  --color-accent-900: #1e4601;
 
-  /* WARNING: Warm amber */
-  --color-warning-50: #fffbeb;
-  --color-warning-100: #fef3c7;
-  --color-warning-200: #fde68a;
-  --color-warning-300: #fcd34d;
-  --color-warning-400: #fbbf24;
-  --color-warning-500: #f59e0b;
-  --color-warning-600: #d97706;
-  --color-warning-700: #b45309;
+  /* WARNING: Bright Red */
+  --color-warning-50: #ffebeb;
+  --color-warning-100: #ffd1d1;
+  --color-warning-200: #ffb3b3;
+  --color-warning-300: #ff8a8a;
+  --color-warning-400: #ff6666;
+  --color-warning-500: #ff4b4b;
+  --color-warning-600: #ea2b2b;
+  --color-warning-700: #c21a1a;
+  --color-warning-800: #9b1414;
+  --color-warning-900: #7f0f0f;
 }
 
 /* Base styles */
@@ -89,13 +91,26 @@ html {
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  color: #27251f; /* surface-900 */
-  background-color: #fafaf8; /* surface-50 */
+  font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+  color: #3f3f3f;
+  /* background-color: #ffffff; removed to inherit and avoid white gaps */
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.display-font {
+  font-family: 'Fredoka', system-ui, -apple-system, sans-serif;
+  color: #3f3f3f;
+  text-wrap: balance;
+  /* Preach from Web Interface Guidelines */
 }
 
 #main-content {
-  padding-top: 56px;
+  /* Removed padding-top: 56px to fix white strip at the top */
 }
 
 /* Skip link for keyboard users */
@@ -107,11 +122,11 @@ body {
   height: 1px;
   overflow: hidden;
   z-index: 1000;
-  background: #0f766e;
+  background: var(--color-primary-500);
   color: #ffffff;
   padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  font-weight: 600;
+  border-radius: 1rem;
+  font-weight: 700;
 }
 
 .skip-link:focus {
@@ -148,7 +163,7 @@ body {
 
 :root[data-focus-mode="true"] .focus-mode-surface {
   background: #ffffff !important;
-  border-color: #e2e8f0 !important;
+  border-color: var(--color-surface-200) !important;
   box-shadow: none !important;
 }
 
@@ -156,53 +171,91 @@ body {
   line-height: 1.7;
 }
 
-/* Focus states for accessibility */
+/* VERCEL GUIDELINES: Focus states for accessibility */
 *:focus-visible {
-  outline: 2px solid #0d9488; /* primary-600 */
-  outline-offset: 2px;
+  outline: 2px solid var(--color-secondary-500) !important;
+  outline-offset: 2px !important;
+}
+
+/* Remove default focus if NOT focus visible (guidelines) */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* VERCEL GUIDELINES: Touch & Interaction */
+* {
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Selection styling */
 ::selection {
-  background-color: #ccfbf1; /* primary-100 */
-  color: #134e4a; /* primary-900 */
+  background-color: var(--color-primary-100);
+  color: var(--color-primary-900);
 }
 
-/* Scrollbar - subtle and refined */
+/* Scrollbar - chunky and playful */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 12px;
+  height: 12px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--color-surface-100);
+  border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d6d3d1;
-  border-radius: 4px;
+  background: var(--color-surface-300);
+  border-radius: 8px;
+  border: 3px solid var(--color-surface-100);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a29e;
+  background: var(--color-surface-400);
 }
 
-/* Interactive element base transitions */
-button, a, [role="button"] {
-  transition-property: background-color, border-color, color, box-shadow, transform;
-  transition-duration: 150ms;
-  transition-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1);
-}
-
-/* Ensure clickable elements show pointer */
-button:not(:disabled), 
-a, 
-[role="button"]:not(:disabled) {
+/* Interactive element base rules */
+button,
+a,
+[role="button"] {
   cursor: pointer;
 }
 
-/* Subtle active state for tactile feedback */
-button:active:not(:disabled),
-[role="button"]:active:not(:disabled) {
-  transform: translateY(0.5px);
+button:disabled,
+a[aria-disabled="true"],
+[role="button"][aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* CUSTOM DUOLINGO 3D BUTTON UTILITIES */
+.btn-3d {
+  transition-property: transform, box-shadow, background-color, border-color, color;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Only animate downwards when clicked, drop the shadow */
+.btn-3d:active:not(:disabled) {
+  transform: translateY(3px);
+}
+
+.btn-3d-primary:active:not(:disabled) {
+  box-shadow: 0 0px 0 0 var(--color-primary-600);
+}
+
+.btn-3d-secondary:active:not(:disabled) {
+  box-shadow: 0 0px 0 0 var(--color-secondary-600);
+}
+
+.btn-3d-tertiary:active:not(:disabled) {
+  box-shadow: 0 0px 0 0 var(--color-tertiary-600);
+}
+
+.btn-3d-danger:active:not(:disabled) {
+  box-shadow: 0 0px 0 0 var(--color-warning-600);
+}
+
+.btn-3d-surface:active:not(:disabled) {
+  box-shadow: 0 0px 0 0 var(--color-surface-200);
 }

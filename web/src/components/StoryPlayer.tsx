@@ -125,15 +125,15 @@ export const StoryPlayer = ({
       role="region"
       aria-label="Story mode player"
     >
-      <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-slate-50">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border-b-2 border-surface-200 bg-surface-50 gap-4">
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500">{t('story.mode')}</p>
-          <h3 className="text-lg font-semibold text-slate-900">{currentSlide.title}</h3>
+          <p className="text-xs font-bold uppercase tracking-widest text-surface-500">{t('story.mode')}</p>
+          <h3 className="text-xl font-bold font-display text-surface-800">{currentSlide.title}</h3>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {onRegenerateAudio && (
             <button
-              className="px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 hover:bg-slate-100"
+              className="btn-3d px-3 py-1.5 text-xs font-bold rounded-xl border-2 border-surface-200 bg-white text-surface-700 btn-3d-surface"
               onClick={onRegenerateAudio}
               disabled={isAudioLoading}
               aria-label="Regenerate narration audio"
@@ -142,7 +142,7 @@ export const StoryPlayer = ({
             </button>
           )}
           <button
-            className="px-3 py-2 text-sm rounded-lg border border-slate-200 hover:bg-slate-100"
+            className="btn-3d px-4 py-2 text-sm font-bold rounded-xl border-2 border-surface-200 bg-white text-surface-700 btn-3d-surface flex-1 sm:flex-none"
             onClick={() => {
               setIsAutoPlaying(false);
               clearTimer();
@@ -154,7 +154,7 @@ export const StoryPlayer = ({
             {t('story.pause')}
           </button>
           <button
-            className="px-3 py-2 text-sm rounded-lg border border-slate-200 hover:bg-slate-100"
+            className="btn-3d px-4 py-2 text-sm font-bold rounded-xl border-2 border-primary-600 bg-primary-500 text-white btn-3d-primary flex-1 sm:flex-none"
             onClick={() => {
               setIsAutoPlaying(true);
               if (isPaused) resume();
@@ -167,7 +167,7 @@ export const StoryPlayer = ({
             {t('story.play')}
           </button>
           <button
-            className="px-3 py-2 text-sm rounded-lg border border-slate-200 hover:bg-slate-100"
+            className="btn-3d px-4 py-2 text-sm font-bold rounded-xl border-2 border-warning-600 bg-warning-500 text-white btn-3d-danger flex-1 sm:flex-none"
             onClick={() => {
               setIsAutoPlaying(false);
               clearTimer();
@@ -231,9 +231,9 @@ export const StoryPlayer = ({
         </div>
       )}
 
-      <div className="flex items-center justify-between p-4 border-t border-slate-200">
+      <div className="flex items-center justify-between p-4 border-t-2 border-surface-200 bg-white">
         <button
-          className="px-3 py-2 text-sm rounded-lg border border-slate-200 hover:bg-slate-100"
+          className="btn-3d px-4 py-2 text-sm font-bold rounded-xl border-2 border-surface-200 bg-white text-surface-700 btn-3d-surface"
           onClick={() => {
             setIsAutoPlaying(false);
             clearTimer();
@@ -245,11 +245,11 @@ export const StoryPlayer = ({
         >
           Previous
         </button>
-        <div className="text-sm text-slate-500">
-          {t('story.slide')} {currentIndex + 1} of {slides.length}
+        <div className="text-sm font-bold text-surface-400">
+          {currentIndex + 1} / {slides.length}
         </div>
         <button
-          className="px-3 py-2 text-sm rounded-lg border border-slate-200 hover:bg-slate-100"
+          className="btn-3d px-4 py-2 text-sm font-bold rounded-xl border-2 border-secondary-600 bg-secondary-500 text-white btn-3d-secondary"
           onClick={() => {
             setIsAutoPlaying(false);
             clearTimer();

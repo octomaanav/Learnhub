@@ -21,7 +21,7 @@ export interface VoiceAgentContext {
 }
 
 export interface VoiceAgentCallbacks {
-  navigate: (path: string, state?: any) => void;
+  navigate: (path: string, state?: unknown) => void;
   speak: (text: string) => void;
   pauseNarration: () => void;
   resumeNarration: () => void;
@@ -71,21 +71,21 @@ export class VoiceAgentService {
       switch (command.type) {
         case 'navigate':
           return await this.handleNavigation(command);
-        
+
         case 'lesson_control':
           return this.handleLessonControl(command);
-        
+
         case 'discovery':
           return await this.handleDiscovery(command);
-        
+
         case 'unknown':
           this.callbacks.speak("I didn't understand that command. Try saying 'help' to see available commands, or 'go to dashboard' to navigate.");
           return false;
-        
+
         default:
           return false;
       }
-    } catch (error) {
+    } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred';
       this.callbacks.onError(errorMessage);
       this.callbacks.speak(`Sorry, I encountered an error: ${errorMessage}`);
@@ -154,13 +154,13 @@ export class VoiceAgentService {
 
     if (subject && chapterNumber) {
       // Find by subject name and chapter number
-      const matchingSubject = this.subjectsCache.find(s => 
+      const matchingSubject = this.subjectsCache.find(s =>
         s.name.toLowerCase().includes(subject.toLowerCase())
       );
 
       if (matchingSubject) {
         // Sort chapters by sortOrder and find by index (chapterNumber - 1)
-        const sortedChapters = [...matchingSubject.chapters].sort((a, b) => 
+        const sortedChapters = [...matchingSubject.chapters].sort((a, b) =>
           (a.sortOrder || 0) - (b.sortOrder || 0)
         );
         targetChapter = sortedChapters[chapterNumber - 1] || null;
@@ -171,7 +171,7 @@ export class VoiceAgentService {
       this.context.availableSubjects.forEach(subject => {
         allChapters.push(...subject.chapters);
       });
-      const sortedChapters = allChapters.sort((a, b) => 
+      const sortedChapters = allChapters.sort((a, b) =>
         (a.sortOrder || 0) - (b.sortOrder || 0)
       );
       targetChapter = sortedChapters[chapterNumber - 1] || null;
@@ -186,7 +186,7 @@ export class VoiceAgentService {
     }
 
     // Find the subject that contains this chapter
-    const parentSubject = this.subjectsCache?.find(s => 
+    const parentSubject = this.subjectsCache?.find(s =>
       s.chapters.some(c => c.id === targetChapter.id)
     );
 
@@ -205,7 +205,7 @@ export class VoiceAgentService {
     const actionText = command.action === 'lesson'
       ? `Opening ${targetChapter.name} and starting narration`
       : `Opening ${targetChapter.name}`;
-    
+
     this.callbacks.speak(actionText);
     return true;
   }
@@ -333,8 +333,8 @@ export class VoiceAgentService {
 
       this.callbacks.speak(message);
       return true;
-    } catch (error) {
-      this.callbacks.speak('Failed to load your chapters.');
+    } catch (_error: unknown) {
+      this.callbacks?.speak('Failed to load your chapters.');
       return false;
     }
   }
@@ -363,8 +363,8 @@ export class VoiceAgentService {
       const subjectNames = this.subjectsCache.map(s => s.name).join(', ');
       this.callbacks.speak(`Your subjects are: ${subjectNames}`);
       return true;
-    } catch (error) {
-      this.callbacks.speak('Failed to load your subjects.');
+    } catch (_error: unknown) {
+      this.callbacks?.speak('Failed to load your subjects.');
       return false;
     }
   }

@@ -21,7 +21,6 @@ import { AuthProvider } from './context/AuthContext';
 import { VoiceAgentProvider } from './components/VoiceAgentProvider';
 import { VoiceAgentControls } from './components/VoiceAgentControls';
 import { AccessibilityProvider } from './components/accessibility/AccessibilityProvider';
-import { GlobalControlsBar } from './components/GlobalControlsBar';
 import { LanguageProvider } from './components/i18n/LanguageProvider';
 
 function App() {
@@ -80,7 +79,6 @@ function App() {
                   <Route path="/accessibility-guide" element={<AccessibilityGuidePage />} />
                 </Routes>
               </main>
-              <GlobalControlsBar />
               <VoiceAgentControls />
             </VoiceAgentProvider>
           </LanguageProvider>

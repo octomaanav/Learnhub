@@ -4,21 +4,19 @@ import type { ParsedUnit } from '../types';
 import { clearAllFiles } from '../utils/fileStorage';
 
 function ParseResultPage() {
-  const [units, setUnits] = useState<ParsedUnit[]>([]);
+  const [units, setUnits] = useState<ParsedUnit[]>(() => {
+    const storedUnits = sessionStorage.getItem('parsedUnits');
+    return storedUnits ? JSON.parse(storedUnits) : [];
+  });
   const [expandedUnit, setExpandedUnit] = useState<number | null>(0);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const storedUnits = sessionStorage.getItem('parsedUnits');
-    
-    if (!storedUnits) {
+    if (units.length === 0) {
       navigate('/parse');
-      return;
     }
-
-    setUnits(JSON.parse(storedUnits));
-  }, [navigate]);
+  }, [units, navigate]);
 
   const handleDownloadJSON = () => {
     const dataStr = JSON.stringify(units, null, 2);
@@ -42,7 +40,7 @@ function ParseResultPage() {
   };
 
   const totalSections = units.reduce((acc, unit) => acc + unit.sections.length, 0);
-  const totalGoals = units.reduce((acc, unit) => 
+  const totalGoals = units.reduce((acc, unit) =>
     acc + unit.sections.reduce((sAcc, section) => sAcc + section.learningGoals.length, 0), 0
   );
 
@@ -110,22 +108,21 @@ function ParseResultPage() {
       <main className="max-w-6xl mx-auto px-6 py-8">
         <div className="space-y-6">
           {units.map((unit, unitIdx) => (
-            <div 
+            <div
               key={unitIdx}
               className="bg-white rounded-xl border border-surface-200 overflow-hidden shadow-sm"
             >
               {/* Unit Header */}
-              <div 
+              <div
                 className="p-5 cursor-pointer hover:bg-surface-50 transition-colors"
                 onClick={() => setExpandedUnit(expandedUnit === unitIdx ? null : unitIdx)}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg ${
-                      unitIdx % 3 === 0 ? 'bg-gradient-to-br from-primary-500 to-primary-600' :
-                      unitIdx % 3 === 1 ? 'bg-gradient-to-br from-secondary-500 to-secondary-600' :
-                      'bg-gradient-to-br from-accent-500 to-accent-600'
-                    }`}>
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg ${unitIdx % 3 === 0 ? 'bg-gradient-to-br from-primary-500 to-primary-600' :
+                        unitIdx % 3 === 1 ? 'bg-gradient-to-br from-secondary-500 to-secondary-600' :
+                          'bg-gradient-to-br from-accent-500 to-accent-600'
+                      }`}>
                       {unitIdx + 1}
                     </div>
                     <div className="flex-1">
@@ -141,10 +138,10 @@ function ParseResultPage() {
                       </div>
                     </div>
                   </div>
-                  <svg 
+                  <svg
                     className={`w-5 h-5 text-surface-400 transition-transform mt-1 ${expandedUnit === unitIdx ? 'rotate-180' : ''}`}
-                    fill="none" 
-                    stroke="currentColor" 
+                    fill="none"
+                    stroke="currentColor"
                     viewBox="0 0 24 24"
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -158,14 +155,14 @@ function ParseResultPage() {
                   {unit.sections.map((section, sectionIdx) => {
                     const sectionKey = `${unitIdx}-${sectionIdx}`;
                     const isExpanded = expandedSection === sectionKey;
-                    
+
                     return (
-                      <div 
+                      <div
                         key={sectionIdx}
                         className="border-b border-surface-100 last:border-b-0"
                       >
                         {/* Section Header */}
-                        <div 
+                        <div
                           className="px-5 py-4 cursor-pointer hover:bg-surface-50 transition-colors flex items-center gap-4"
                           onClick={() => setExpandedSection(isExpanded ? null : sectionKey)}
                         >
@@ -179,10 +176,10 @@ function ParseResultPage() {
                           <span className="text-xs text-surface-400 bg-surface-100 px-2 py-1 rounded">
                             {section.learningGoals.length} goals
                           </span>
-                          <svg 
+                          <svg
                             className={`w-4 h-4 text-surface-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                            fill="none" 
-                            stroke="currentColor" 
+                            fill="none"
+                            stroke="currentColor"
                             viewBox="0 0 24 24"
                           >
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />

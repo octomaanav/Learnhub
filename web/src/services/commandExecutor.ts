@@ -6,8 +6,8 @@ import type { SubjectWithChapters, StructuredChapter } from '../types';
 import { apiUrl } from '../utils/api';
 
 export interface CommandExecutorDependencies {
-  navigate: (path: string, options?: any) => void;
-  user: any;
+  navigate: (path: string, options?: unknown) => void;
+  user: { profile?: { curriculumId: string; classId: string; chapterIds: string[] } } | null;
   availableSubjects: SubjectWithChapters[];
 }
 
@@ -33,16 +33,16 @@ export class CommandExecutor {
   /**
    * Execute a tool call from Gemini
    */
-  async executeToolCall(toolCall: any): Promise<any[]> {
+  async executeToolCall(toolCall: { functionCalls?: { name: string; args: Record<string, any>; id: string }[] }): Promise<Record<string, unknown>[]> {
 
     const calls = toolCall.functionCalls || [];
-    const responses: any[] = [];
+    const responses: Record<string, unknown>[] = [];
 
     for (const call of calls) {
 
       try {
         let success = false;
-        let result: any = {};
+        let result: Record<string, unknown> = {};
 
         switch (call.name) {
           case 'navigate':
@@ -101,12 +101,12 @@ export class CommandExecutor {
           response: result
         });
 
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('[CommandExecutor] Error executing tool:', call.name, error);
         responses.push({
           id: call.id,
           name: call.name,
-          response: { success: false, error: error.message }
+          response: { success: false, error: error instanceof Error ? error.message : String(error) }
         });
       }
     }
@@ -305,7 +305,7 @@ export class CommandExecutor {
   /**
    * List available subjects
    */
-  private async listSubjects(): Promise<any> {
+  private async listSubjects(): Promise<Record<string, unknown>> {
     try {
 
       if (this.deps.availableSubjects.length === 0) {
@@ -327,7 +327,7 @@ export class CommandExecutor {
   /**
    * List available chapters
    */
-  private async listChapters(subjectName?: string): Promise<any> {
+  private async listChapters(subjectName?: string): Promise<Record<string, unknown>> {
     try {
 
       if (this.deps.availableSubjects.length === 0) {

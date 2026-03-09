@@ -2,16 +2,16 @@ import { useState, useEffect } from 'react';
 import { apiUrl } from '../utils/api';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { 
+import {
   fetchCurricula,
   fetchSubjectsWithChapters,
 } from '../data/curriculumData';
 import { saveLanguagePreference } from '../utils/language';
 import { useI18n } from '../components/i18n/useI18n';
 import { useLanguage } from '../components/i18n/LanguageProvider';
-import type { 
-  SetupStep, 
-  SetupStepInfo, 
+import type {
+  SetupStep,
+  SetupStepInfo,
   CurriculumWithGrades,
   GradeEntity,
   SubjectWithChapters,
@@ -50,7 +50,7 @@ export const UserSetupPage = () => {
   const [subjectsWithChapters, setSubjectsWithChapters] = useState<SubjectWithChapters[]>([]);
   const [isLoadingCurricula, setIsLoadingCurricula] = useState(true);
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
-  
+
   // UI state for expanded subjects
   const [expandedSubjects, setExpandedSubjects] = useState<Set<string>>(new Set());
 
@@ -61,6 +61,8 @@ export const UserSetupPage = () => {
         language: (user.profile?.language as 'en' | 'es' | 'hi') || 'en'
       }));
     }
+    // Only update when auth resolves
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   // Fetch curricula on mount
@@ -92,7 +94,7 @@ export const UserSetupPage = () => {
 
   // Get current step index
   const currentStepIndex = STEPS.findIndex(s => s.id === currentStep);
-  
+
   // Get selected curriculum and its grades
   const selectedCurriculum = curricula.find(c => c.id === setupData.curriculumId);
   const availableGrades: GradeEntity[] = selectedCurriculum?.grades || [];
@@ -171,7 +173,7 @@ export const UserSetupPage = () => {
   const toggleAllChaptersInSubject = (subject: SubjectWithChapters) => {
     const subjectChapterIds = subject.chapters.map(c => c.id);
     const allSelected = subjectChapterIds.every(id => setupData.chapterIds.includes(id));
-    
+
     setSetupData(prev => ({
       ...prev,
       chapterIds: allSelected
@@ -286,21 +288,19 @@ export const UserSetupPage = () => {
           <div className="flex items-center justify-between mb-2">
             {STEPS.map((step, index) => (
               <div key={step.id} className="flex items-center">
-                <div 
-                  className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm transition-all ${
-                    index < currentStepIndex 
-                      ? 'bg-green-500 text-white' 
-                      : index === currentStepIndex 
-                      ? 'bg-blue-600 text-white ring-4 ring-blue-100'
-                      : 'bg-slate-200 text-slate-500'
-                  }`}
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm transition-all ${index < currentStepIndex
+                      ? 'bg-green-500 text-white'
+                      : index === currentStepIndex
+                        ? 'bg-blue-600 text-white ring-4 ring-blue-100'
+                        : 'bg-slate-200 text-slate-500'
+                    }`}
                 >
                   {index < currentStepIndex ? '✓' : index + 1}
                 </div>
                 {index < STEPS.length - 1 && (
-                  <div className={`w-24 h-1 mx-2 rounded ${
-                    index < currentStepIndex ? 'bg-green-500' : 'bg-slate-200'
-                  }`} />
+                  <div className={`w-24 h-1 mx-2 rounded ${index < currentStepIndex ? 'bg-green-500' : 'bg-slate-200'
+                    }`} />
                 )}
               </div>
             ))}
@@ -361,11 +361,10 @@ export const UserSetupPage = () => {
                     <button
                       key={curriculum.id}
                       onClick={() => selectCurriculum(curriculum.id)}
-                      className={`p-6 rounded-xl border-2 text-left transition-all ${
-                        setupData.curriculumId === curriculum.id
+                      className={`p-6 rounded-xl border-2 text-left transition-all ${setupData.curriculumId === curriculum.id
                           ? 'border-blue-500 bg-blue-50 shadow-md'
                           : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50'
-                      }`}
+                        }`}
                     >
                       <h3 className="font-bold text-lg text-slate-900 mb-2">{curriculum.name}</h3>
                       <p className="text-sm text-slate-600">{curriculum.description}</p>
@@ -391,11 +390,10 @@ export const UserSetupPage = () => {
                     <button
                       key={grade.id}
                       onClick={() => selectGrade(grade.id)}
-                      className={`p-6 rounded-xl border-2 text-left transition-all ${
-                        setupData.classId === grade.id
+                      className={`p-6 rounded-xl border-2 text-left transition-all ${setupData.classId === grade.id
                           ? 'border-blue-500 bg-blue-50 shadow-md'
                           : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50'
-                      }`}
+                        }`}
                     >
                       <h3 className="font-bold text-lg text-slate-900 mb-1">{grade.name}</h3>
                       <p className="text-sm text-slate-600">{grade.description}</p>
@@ -418,7 +416,7 @@ export const UserSetupPage = () => {
                     {availableGrades.find(g => g.id === setupData.classId)?.name}
                   </span>
                 </div>
-                
+
                 {isLoadingSubjects ? (
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
@@ -430,14 +428,13 @@ export const UserSetupPage = () => {
                       const isExpanded = expandedSubjects.has(subject.id);
                       const selectedCount = getSelectedCountForSubject(subject);
                       const allSelected = selectedCount === subject.chapters.length && subject.chapters.length > 0;
-                      
+
                       return (
                         <div key={subject.id} className="border-2 border-slate-200 rounded-xl overflow-hidden">
                           {/* Subject Header */}
-                          <div 
-                            className={`p-4 flex items-center justify-between cursor-pointer transition-colors ${
-                              selectedCount > 0 ? 'bg-green-50' : 'bg-slate-50 hover:bg-slate-100'
-                            }`}
+                          <div
+                            className={`p-4 flex items-center justify-between cursor-pointer transition-colors ${selectedCount > 0 ? 'bg-green-50' : 'bg-slate-50 hover:bg-slate-100'
+                              }`}
                             onClick={() => toggleSubjectExpanded(subject.id)}
                           >
                             <div className="flex items-center gap-3">
@@ -461,16 +458,15 @@ export const UserSetupPage = () => {
                                 e.stopPropagation();
                                 toggleAllChaptersInSubject(subject);
                               }}
-                              className={`px-3 py-1 text-sm rounded-lg transition-colors ${
-                                allSelected
+                              className={`px-3 py-1 text-sm rounded-lg transition-colors ${allSelected
                                   ? 'bg-green-500 text-white'
                                   : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-                              }`}
+                                }`}
                             >
                               {allSelected ? 'Deselect All' : 'Select All'}
                             </button>
                           </div>
-                          
+
                           {/* Chapters List */}
                           {isExpanded && (
                             <div className="p-4 pt-0 grid gap-2">
@@ -478,17 +474,15 @@ export const UserSetupPage = () => {
                                 <button
                                   key={chapter.id}
                                   onClick={() => toggleChapter(chapter.id)}
-                                  className={`p-3 rounded-lg border text-left transition-all flex items-center gap-3 ${
-                                    setupData.chapterIds.includes(chapter.id)
+                                  className={`p-3 rounded-lg border text-left transition-all flex items-center gap-3 ${setupData.chapterIds.includes(chapter.id)
                                       ? 'border-green-500 bg-green-50'
                                       : 'border-slate-200 hover:border-green-300 hover:bg-slate-50'
-                                  }`}
+                                    }`}
                                 >
-                                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center text-xs ${
-                                    setupData.chapterIds.includes(chapter.id)
+                                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center text-xs ${setupData.chapterIds.includes(chapter.id)
                                       ? 'border-green-500 bg-green-500 text-white'
                                       : 'border-slate-300'
-                                  }`}>
+                                    }`}>
                                     {setupData.chapterIds.includes(chapter.id) && '✓'}
                                   </div>
                                   <div className="flex-1">
@@ -504,7 +498,7 @@ export const UserSetupPage = () => {
                     })}
                   </div>
                 )}
-                
+
                 {/* Selected Summary */}
                 {setupData.chapterIds.length > 0 && (
                   <div className="mt-6 p-4 bg-slate-50 rounded-lg">
@@ -534,11 +528,10 @@ export const UserSetupPage = () => {
             <button
               onClick={goToPrevStep}
               disabled={!canGoPrev}
-              className={`px-6 py-3 rounded-lg font-medium transition-all ${
-                canGoPrev 
-                  ? 'text-slate-700 hover:bg-slate-200' 
+              className={`px-6 py-3 rounded-lg font-medium transition-all ${canGoPrev
+                  ? 'text-slate-700 hover:bg-slate-200'
                   : 'text-slate-400 cursor-not-allowed'
-              }`}
+                }`}
             >
               {t('setup.back')}
             </button>
@@ -547,11 +540,10 @@ export const UserSetupPage = () => {
               <button
                 onClick={handleSubmit}
                 disabled={!canGoNext || isSubmitting}
-                className={`px-8 py-3 rounded-lg font-semibold transition-all ${
-                  canGoNext && !isSubmitting
+                className={`px-8 py-3 rounded-lg font-semibold transition-all ${canGoNext && !isSubmitting
                     ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-lg'
                     : 'bg-slate-300 text-slate-500 cursor-not-allowed'
-                }`}
+                  }`}
               >
                 {isSubmitting ? t('setup.loading') : `${t('setup.finish')} ✓`}
               </button>
@@ -559,11 +551,10 @@ export const UserSetupPage = () => {
               <button
                 onClick={goToNextStep}
                 disabled={!canGoNext}
-                className={`px-8 py-3 rounded-lg font-semibold transition-all ${
-                  canGoNext
+                className={`px-8 py-3 rounded-lg font-semibold transition-all ${canGoNext
                     ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 shadow-lg'
                     : 'bg-slate-300 text-slate-500 cursor-not-allowed'
-                }`}
+                  }`}
               >
                 {t('setup.next')} →
               </button>

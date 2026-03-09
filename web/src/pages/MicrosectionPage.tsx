@@ -67,7 +67,7 @@ import { useLanguage } from '../components/i18n/LanguageProvider';
 import { useI18n } from '../components/i18n/useI18n';
 
 // Article Viewer Component
-const ArticleViewer: React.FC<{ content: ArticleContent; t: (key: any) => string }> = ({ content, t }) => {
+const ArticleViewer: React.FC<{ content: ArticleContent; t: (key: string) => string }> = ({ content, t }) => {
   return (
     <div className="prose prose-slate max-w-none">
       {/* Introduction */}
@@ -161,7 +161,7 @@ const VideoViewer: React.FC<{
   audioSlides?: StoryAudioAsset['slides'];
   onRegenerateAudio?: () => void;
   isAudioLoading?: boolean;
-  t: (key: any) => string;
+  t: (key: string) => string;
 }> = ({ content, story, onGenerateStory, isStoryLoading, audioSlides, onRegenerateAudio, isAudioLoading, t }) => {
   const getEmbedUrl = (url: string) => {
     if (url.includes('youtube.com') || url.includes('youtu.be')) {
@@ -243,7 +243,7 @@ const VideoViewer: React.FC<{
 };
 
 // Quiz Viewer Component
-const QuizViewer: React.FC<{ content: QuizMicrosection['content']; t: (key: any) => string }> = ({ content, t }) => {
+const QuizViewer: React.FC<{ content: QuizMicrosection['content']; t: (key: string) => string }> = ({ content, t }) => {
   const [answers, setAnswers] = useState<Record<string, string | number>>({});
   const [submitted, setSubmitted] = useState(false);
   const [showResults, setShowResults] = useState(false);
@@ -402,7 +402,7 @@ const QuizViewer: React.FC<{ content: QuizMicrosection['content']; t: (key: any)
 };
 
 // Practice Viewer Component
-const PracticeViewer: React.FC<{ content: PracticeMicrosection['content']; t: (key: any) => string }> = ({ content, t }) => {
+const PracticeViewer: React.FC<{ content: PracticeMicrosection['content']; t: (key: string) => string }> = ({ content, t }) => {
   return <QuizViewer content={{ id: content.id, title: content.title, description: content.description, questions: content.questions }} t={t} />;
 };
 
@@ -496,8 +496,27 @@ export function MicrosectionPage() {
     setStory(null);
     setStoryError(null);
     setStoryAudio(null);
+
+    const preloadStory = async () => {
+      if (!classId || !subjectId || !chapterSlug || !sectionSlug) return;
+      try {
+        const response = await fetch(
+          `http://localhost:8000/api/story/${classId}/${subjectId}/${chapterSlug}/${sectionSlug}`
+        );
+        if (!response.ok) {
+          return;
+        }
+        const storyData: StoryAsset = await response.json();
+        if (storyData.status === 'ready') {
+          setStory(storyData);
+        }
+      } catch (err) {
+        console.warn('Story preload failed', err);
+      }
+    };
+
     preloadStory();
-  }, [classId, subjectId, chapterSlug, sectionSlug, microsectionId]);
+  }, [classId, subjectId, chapterSlug, sectionSlug]);
 
   // Voice Control Listener
   useEffect(() => {
@@ -542,7 +561,54 @@ export function MicrosectionPage() {
 
     // Braille Control Listener
     const handleBrailleControl = () => {
-      handleBraille();
+      // Logic for braille output moved directly into the event listener to avoid dependency issues.
+      if (!data) return;
+
+      setIsBrailleLoading(true);
+
+      const lessonText = getAllContentText(data.microsection);
+
+      fetch(apiUrl('/api/braille/convert'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          lesson: lessonText,
+          normalize: true
+        }),
+      }).then(r => r.json()).then(result => {
+        if (result.success) {
+          if (result.brf) {
+            const blobBrf = new Blob([result.brf], { type: 'text/plain' });
+            const urlBrf = window.URL.createObjectURL(blobBrf);
+            const aBrf = document.createElement('a');
+            aBrf.href = urlBrf;
+            aBrf.download = `${data.microsection.title.replace(/\s+/g, '_')}.brf`;
+            document.body.appendChild(aBrf);
+            aBrf.click();
+            window.URL.revokeObjectURL(urlBrf);
+            document.body.removeChild(aBrf);
+          }
+
+          if (result.fullBraille) {
+            const blobTxt = new Blob([result.fullBraille], { type: 'text/plain;charset=utf-8' });
+            const urlTxt = window.URL.createObjectURL(blobTxt);
+            const aTxt = document.createElement('a');
+            aTxt.href = urlTxt;
+            aTxt.download = `${data.microsection.title.replace(/\s+/g, '_')}_unicode.txt`;
+            document.body.appendChild(aTxt);
+            aTxt.click();
+            window.URL.revokeObjectURL(urlTxt);
+            document.body.removeChild(aTxt);
+          }
+        }
+      }).catch(err => {
+        console.error('Braille export error:', err);
+        alert('Failed to generate Braille files. Please try again.');
+      }).finally(() => {
+        setIsBrailleLoading(false);
+      });
     };
 
     window.addEventListener('lesson-control', handleVoiceControl as EventListener);
@@ -552,7 +618,7 @@ export function MicrosectionPage() {
       window.removeEventListener('lesson-control', handleVoiceControl as EventListener);
       window.removeEventListener('braille-control', handleBrailleControl as EventListener);
     };
-  }, [data, voiceOverEnabled]);
+  }, [data, voiceOverEnabled, classId, subjectId, chapterSlug, navigate]);
 
   // VoiceOver: read page when enabled
   useEffect(() => {
@@ -704,43 +770,43 @@ export function MicrosectionPage() {
     }
   };
 
-  const fetchStoryAudio = async (storyData?: StoryAsset, force = false) => {
-    const targetStory = storyData || story;
-    if (!targetStory) return;
-    setIsAudioLoading(true);
-    try {
-      const response = await fetch('http://localhost:8000/api/story/audio', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          classId,
-          subjectId,
-          chapterSlug,
-          sectionSlug,
-          locale: language,
-          force
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate audio');
-      }
-
-      const audioData: { audio: StoryAudioAsset } = await response.json();
-      setStoryAudio(audioData.audio);
-    } catch (err) {
-      setStoryError(err instanceof Error ? err.message : 'Failed to generate audio');
-    } finally {
-      setIsAudioLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchStoryAudio = async (storyData?: StoryAsset, force = false) => {
+      const targetStory = storyData || story;
+      if (!targetStory) return;
+      setIsAudioLoading(true);
+      try {
+        const response = await fetch('http://localhost:8000/api/story/audio', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            classId,
+            subjectId,
+            chapterSlug,
+            sectionSlug,
+            locale: language,
+            force
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to generate audio');
+        }
+
+        const audioData: { audio: StoryAudioAsset } = await response.json();
+        setStoryAudio(audioData.audio);
+      } catch (err) {
+        setStoryError(err instanceof Error ? err.message : 'Failed to generate audio');
+      } finally {
+        setIsAudioLoading(false);
+      }
+    };
+
     if (story && language) {
       fetchStoryAudio(story);
     }
-  }, [story, language]);
+  }, [story, language, classId, subjectId, chapterSlug, sectionSlug]);
 
   const openBraille = async () => {
     if (!data || data.microsection.type !== 'article') {
@@ -777,11 +843,77 @@ export function MicrosectionPage() {
     }
   };
   useEffect(() => {
+    const openBrailleInline = async () => {
+      if (!data || data.microsection.type !== 'article') {
+        setBrailleError('Braille is currently available for article lessons.');
+        setIsBrailleOpen(true);
+        return;
+      }
+
+      setIsBrailleLoading(true);
+      setBrailleError(null);
+      setIsBrailleOpen(true);
+
+      try {
+        const article = data.microsection as ArticleMicrosection;
+        const lessonText = extractArticleRawText(article.content);
+
+        const response = await fetch('http://localhost:8000/api/braille/convert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lesson: lessonText })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to generate braille');
+        }
+
+        const brailleData = await response.json();
+        setBrailleResult({ brf: brailleData.brf, fullBraille: brailleData.fullBraille });
+      } catch (err) {
+        setBrailleError(err instanceof Error ? err.message : 'Failed to generate braille');
+      } finally {
+        setIsBrailleLoading(false);
+      }
+    };
+
+    const fetchStoryInline = async () => {
+      if (!classId || !subjectId || !chapterSlug || !sectionSlug) return;
+      setIsStoryLoading(true);
+      setStoryError(null);
+      try {
+        const response = await fetch(`${API_BASE}/api/story/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            classId,
+            subjectId,
+            chapterSlug,
+            sectionSlug
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to generate story');
+        }
+
+        const storyData: StoryAsset = await response.json();
+        setStory(storyData);
+        setStoryAudio(null);
+      } catch (err) {
+        setStoryError(err instanceof Error ? err.message : 'Failed to generate story');
+      } finally {
+        setIsStoryLoading(false);
+      }
+    };
+
     const handleStoryOpen = () => {
-      fetchStory();
+      fetchStoryInline();
     };
     const handleBrailleOpen = () => {
-      openBraille();
+      openBrailleInline();
     };
 
     window.addEventListener('story-open', handleStoryOpen as EventListener);

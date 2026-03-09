@@ -12,7 +12,7 @@ export const LessonPage = () => {
     subjectId: string;
     unit: string;
   }>();
-  
+
   const { user } = useAuth();
 
   const [book, setBook] = useState<UnitLessons[]>([]);
@@ -45,14 +45,14 @@ export const LessonPage = () => {
         }
 
         const subjects = await response.json();
-        const subject = subjects.find((s: any) => s.slug === subjectId);
-        
+        const subject = subjects.find((s: { slug: string; chapters: { slug: string; id: string }[] }) => s.slug === subjectId);
+
         if (!subject) {
           throw new Error('Subject not found');
         }
 
-        const chapter = subject.chapters.find((c: any) => c.slug === chapterSlug);
-        
+        const chapter = subject.chapters.find((c: { slug: string; id: string }) => c.slug === chapterSlug);
+
         if (!chapter) {
           throw new Error('Chapter not found');
         }
@@ -79,14 +79,14 @@ export const LessonPage = () => {
 
       try {
         const response = await fetch(apiUrl(`/api/lessons/chapter/${chapterId}`));
-        
+
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ error: 'Failed to fetch lessons' }));
           throw new Error(errorData.error || `Server returned ${response.status}`);
         }
 
         const data: UnitLessons[] = await response.json();
-        
+
         if (!data || data.length === 0) {
           setError('No lessons found for this chapter.');
           setIsLoading(false);
