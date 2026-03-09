@@ -38,10 +38,8 @@ function LoginPage() {
       await refetch();
 
       // If user has profile (unlikely for new user), go to dashboard, else setup
-      if (data.user.isProfileComplete) {
+      if (data.user) { // Assuming data.user exists after successful login
         navigate('/dashboard');
-      } else {
-        navigate('/setup');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');

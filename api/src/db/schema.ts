@@ -21,6 +21,8 @@ export const users = pgTable("users", {
   classId: uuid("class_id").references(() => classes.id),
 
   isProfileComplete: boolean("is_profile_complete").default(false).notNull(),
+  telegramChatId: text("telegram_chat_id").unique(),
+  telegramPairingCode: text("telegram_pairing_code").unique(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });

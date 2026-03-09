@@ -88,23 +88,8 @@ function Dashboard() {
     );
   }
 
-  if (!userProfile) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center bg-white p-8 rounded-3xl border-2 border-surface-200 shadow-[0_6px_0_0_var(--color-surface-200)] max-w-md">
-          <div className="text-6xl mb-6 transform hover:scale-110 transition-transform cursor-default">👋</div>
-          <h2 className="text-3xl font-black font-display text-surface-900 mb-2">{t('dashboard.setupTitle')}</h2>
-          <p className="text-surface-600 font-bold text-lg mb-8">{t('dashboard.setupSubtitle')}</p>
-          <button
-            onClick={() => navigate('/setup')}
-            className="btn-3d btn-3d-primary w-full px-6 py-4 bg-primary-500 border-2 border-primary-600 text-white rounded-2xl hover:bg-primary-400 font-bold text-lg"
-          >
-            {t('dashboard.setupButton')}
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Removed hard block requiring setup so users can preview the dashboard
+  // if (!userProfile) { ... }
 
   const getCurriculumName = (id: string) => {
     const curriculum = curricula.find(c => c.id === id);
@@ -134,7 +119,7 @@ function Dashboard() {
               <div>
                 <h1 className="font-black text-2xl font-display text-surface-800">{t('app.name')}</h1>
                 <p className="text-xs font-bold text-surface-500 uppercase tracking-widest">
-                  {getCurriculumName(userProfile.curriculumId)} • {getGradeName(userProfile.classId)}
+                  {getCurriculumName(userProfile?.curriculumId || '')} • {getGradeName(userProfile?.classId || '')}
                 </p>
               </div>
             </div>
@@ -217,8 +202,8 @@ function Dashboard() {
                     <button
                       key={chapter.id}
                       onClick={() => {
-                        if (selectedSubject && userProfile) {
-                          navigate(`/${userProfile.classId}/${selectedSubject.slug}/${chapter.slug}`);
+                        if (selectedSubject) {
+                          navigate(`/${userProfile?.classId || 'default'}/${selectedSubject.slug}/${chapter.slug}`);
                         }
                       }}
                       className="p-6 bg-white rounded-3xl border-2 border-surface-200 shadow-[0_6px_0_0_var(--color-surface-200)] text-left transition-transform hover:-translate-y-1 active:translate-y-1 active:shadow-none"

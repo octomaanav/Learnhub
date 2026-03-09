@@ -21,6 +21,7 @@ import { startWorkerLoop } from "./worker/index.js";
 import contentRouter from "./routes/content.js";
 import storyV2Router from "./routes/story_v2.js";
 import brailleV2Router from "./routes/braille_v2.js";
+import webhooksRouter from "./routes/webhooks.js";
 
 const app = express();
 app.set("trust proxy", 1); // Trust first proxy (Render load balancer)
@@ -120,6 +121,7 @@ app.use("/api/story", storyRouter);
 app.use("/api/content", contentRouter);
 app.use("/api/story_v2", storyV2Router);
 app.use("/api/braille_v2", brailleV2Router);
+app.use("/api/webhooks", webhooksRouter);
 
 // Start DB-backed worker loop in this process (no Redis)
 startWorkerLoop().catch((err) => {

@@ -38,11 +38,9 @@ function SignUpPage() {
             // Refresh auth state and redirect
             await refetch();
 
-            // If user has profile (unlikely for new user), go to dashboard, else setup
-            if (data.user.isProfileComplete) {
+            // Redirect to dashboard immediately so user isn't stuck behind setup
+            if (data.user) {
                 navigate('/dashboard');
-            } else {
-                navigate('/setup');
             }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Registration failed');
