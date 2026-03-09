@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Flame, Zap, BookOpen, Trophy, Target, ArrowRight, CheckCircle2, Sparkles, Moon, Sun } from "lucide-react";
 
@@ -25,19 +25,6 @@ const features = [
   },
 ];
 
-const testimonials = [
-  { name: "Sarah K.", role: "Medical Student", quote: "LearnHub made studying biology feel like a game. I actually look forward to it now.", avatar: "S" },
-  { name: "James R.", role: "Self-taught Developer", quote: "The coding track took me from zero to landing my first freelance gig in 3 months.", avatar: "J" },
-  { name: "Mia L.", role: "Language Enthusiast", quote: "I've tried every app. LearnHub is the only one that kept me going past week two.", avatar: "M" },
-];
-
-const stats = [
-  { value: "50K+", label: "Active Learners" },
-  { value: "200+", label: "Lessons Available" },
-  { value: "12M", label: "XP Earned" },
-  { value: "95%", label: "Completion Rate" },
-];
-
 const journeySteps = [
   {
     text: "Right now, 1.3 billion people live with a visual impairment.",
@@ -61,11 +48,14 @@ const journeySteps = [
   },
 ];
 
+const waveformHeights = [18, 34, 52, 30, 20];
+
 function HomePage() {
   const navigate = useNavigate();
 
   // Theme Toggle State
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [isHeroVisible, setIsHeroVisible] = useState(false);
 
   // Void Mode States
   const [isDissolving, setIsDissolving] = useState(false); // Triggers the Thanos snap animation
@@ -73,6 +63,10 @@ function HomePage() {
 
   // Controls the evolving narrative inside Void Mode
   const [voidSequenceStep, setVoidSequenceStep] = useState(0);
+
+  const scrollToFeatures = () => {
+    document.getElementById('features')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   // Trigger the staggered dissolve before entering Void Mode
   const initiateVoidSequence = () => {
@@ -141,24 +135,60 @@ function HomePage() {
     };
   }, [isVoidMode]);
 
-  // Generate stable random heights for the waveform to prevent impurity errors during render
-  const waveformHeights = React.useMemo(() => {
-    // Math.random inside useMemo is fine because it only executes once during mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    return [...Array(5)].map(() => Math.max(16, Math.random() * 50));
+  useEffect(() => {
+    const animationFrame = window.requestAnimationFrame(() => {
+      setIsHeroVisible(true);
+    });
+
+    return () => window.cancelAnimationFrame(animationFrame);
   }, []);
 
   return (
-    <div className={`${theme} min-h-screen font-sans selection:bg-[#10b981]/30 selection:text-[#10b981] overflow-x-hidden relative transition-colors duration-500 bg-surface-50 dark:bg-[#0B0F19] text-surface-900 dark:text-white`}>
+    <div className={`${theme} min-h-screen font-sans selection:bg-[#069494]/30 selection:text-[#069494] overflow-x-hidden relative transition-colors duration-500 bg-surface-50 dark:bg-[#0B0F19] text-surface-900 dark:text-white`}>
 
-      {/* Theme Toggle Button */}
-      <button
-        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-        className={`fixed top-6 right-6 z-50 p-3 rounded-full transition-all duration-300 shadow-sm ${isDissolving || isVoidMode ? 'opacity-0 scale-50 pointer-events-none' : 'opacity-100 scale-100'
-          } bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 text-surface-600 dark:text-surface-300 hover:text-[#10b981] dark:hover:text-[#10b981]`}
+      <header
+        className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${isDissolving || isVoidMode ? 'opacity-0 -translate-y-4 pointer-events-none' : 'opacity-100 translate-y-0'
+          }`}
       >
-        {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-      </button>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-4">
+          <div className="flex items-center justify-between rounded-2xl border border-surface-200/80 dark:border-surface-700/80 bg-white/85 dark:bg-[#0F172A]/85 backdrop-blur-md shadow-sm px-4 sm:px-5 py-3">
+            <button
+              onClick={() => navigate('/')}
+              className="font-display text-xl font-black tracking-tight text-surface-900 dark:text-white"
+            >
+              LearnHub
+            </button>
+
+            <nav className="flex items-center gap-2 sm:gap-3">
+              <button
+                onClick={scrollToFeatures}
+                className="px-3 py-2 rounded-lg text-sm font-bold text-surface-600 dark:text-surface-300 hover:text-[#069494] dark:hover:text-[#069494] hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
+              >
+                About Me
+              </button>
+              <button
+                onClick={() => navigate('/login')}
+                className="px-3 py-2 rounded-lg text-sm font-bold text-surface-600 dark:text-surface-300 hover:text-[#069494] dark:hover:text-[#069494] hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
+              >
+                Login
+              </button>
+              <button
+                onClick={() => navigate('/signup')}
+                className="px-3 py-2 rounded-lg text-sm font-bold text-surface-600 dark:text-surface-300 hover:text-[#069494] dark:hover:text-[#069494] hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
+              >
+                Sign Up
+              </button>
+              <button
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-[#069494] text-white hover:bg-[#047c7c] transition-colors"
+              >
+                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </button>
+            </nav>
+          </div>
+        </div>
+      </header>
 
       {/* =========================================
           STANDARD UI LAYER (Fades out via Thanos Snap)
@@ -169,39 +199,37 @@ function HomePage() {
 
         {/* Hero Section */}
         <section
-          className={`pt-24 pb-20 flex flex-col items-center transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)] ${isDissolving ? 'opacity-0 blur-xl scale-95 translate-y-8 delay-[1200ms]' : 'opacity-100 blur-0 scale-100 translate-y-0 delay-0'
+          className={`min-h-screen pt-24 pb-10 md:pb-16 flex flex-col items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(6,148,148,0.1),_transparent_55%)] transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)] ${isDissolving ? 'opacity-0 blur-xl scale-95 translate-y-8 delay-[1200ms]' : 'opacity-100 blur-0 scale-100 translate-y-0 delay-0'
             }`}
         >
 
-          <div className="w-full max-w-5xl px-6 mb-16 text-center flex flex-col items-center">
+          <div className="w-full max-w-5xl px-6 text-center flex flex-col items-center">
 
-            <div className={`inline-flex items-center gap-2 bg-[#10b981]/10 text-[#10b981] font-semibold text-sm px-4 py-1.5 rounded-full mb-8 ring-1 ring-[#10b981]/30 dark:ring-[#10b981]/20`}>
+            <div className={`inline-flex items-center gap-2 bg-[#069494]/10 text-[#069494] font-semibold text-sm px-4 py-1.5 rounded-full mb-10 ring-1 ring-[#069494]/30 dark:ring-[#069494]/20 transition-all duration-700 ease-out ${isHeroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
               <Sparkles className="w-4 h-4" />
               The future of learning
             </div>
 
             {/* Decreased font weight from font-black to font-bold and size from 6xl to 5xl */}
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.15] font-display mb-6 max-w-4xl mx-auto text-surface-900 dark:text-white">
-              Every button, every menu, every click — <span className="text-[#10b981]">is a barrier someone can't cross.</span> What if we removed them all?
+            <h1
+              className={`text-3xl md:text-4xl lg:text-5xl font-black tracking-tight leading-[1.1] font-display mb-8 max-w-4xl mx-auto text-surface-900 dark:text-white transition-all duration-700 delay-150 ease-out ${isHeroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+            >
+              Every button, every menu, every click <span className="text-[#069494]">is a barrier someone can't cross.</span>
             </h1>
 
-            <p className="text-sm md:text-base text-surface-600 dark:text-surface-400 font-medium max-w-2xl mx-auto leading-relaxed mb-6">
-              LearnHub is an educational platform built on a radical idea: the best interface is the one that disappears.
-            </p>
-
-            <p className="text-lg md:text-xl text-surface-700 dark:text-surface-300 font-medium max-w-3xl mx-auto leading-relaxed mb-12">
+            <p className={`text-lg md:text-xl text-surface-700 dark:text-surface-300 font-medium max-w-3xl mx-auto leading-relaxed mb-14 transition-all duration-700 delay-300 ease-out ${isHeroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
               A major limitation to software usage across the entire globe is UI. So LearnHub asks: what if we get rid of the UI entirely?
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+            <div className={`flex flex-col sm:flex-row items-center justify-center gap-4 transition-all duration-700 delay-500 ease-out ${isHeroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
               <button
                 onClick={initiateVoidSequence}
                 disabled={isDissolving}
-                className="group relative px-8 py-5 bg-[#10b981] text-white rounded-2xl font-bold text-lg overflow-hidden transition-transform active:scale-95 hover:shadow-2xl hover:shadow-[#10b981]/20 w-full sm:w-auto flex items-center justify-center gap-3 disabled:opacity-50 disabled:pointer-events-none"
+                className="group relative px-5 py-3 bg-[#069494] text-white rounded-xl font-bold text-sm md:text-base overflow-hidden transition-transform active:scale-95 hover:shadow-2xl hover:shadow-[#069494]/20 w-full sm:w-auto flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-[#059669] to-[#047857] translate-y-[100%] group-hover:translate-y-0 transition-transform duration-300"></div>
-                <span className="relative flex items-center justify-center gap-3">
-                  <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="absolute inset-0 bg-gradient-to-r from-[#047c7c] to-[#035f5f] translate-y-[100%] group-hover:translate-y-0 transition-transform duration-300"></div>
+                <span className="relative flex items-center justify-center gap-2">
+                  <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
                   </svg>
                   Enter the next gen of software
@@ -211,15 +239,20 @@ function HomePage() {
               <button
                 onClick={() => navigate("/signup")}
                 disabled={isDissolving}
-                className="px-8 py-5 text-lg font-bold text-surface-600 dark:text-surface-400 border-2 border-surface-200 dark:border-surface-800 rounded-2xl hover:border-surface-300 dark:hover:border-surface-700 hover:bg-surface-50 dark:hover:bg-surface-900 hover:text-surface-900 dark:hover:text-white transition-all w-full sm:w-auto flex justify-center disabled:opacity-50 disabled:pointer-events-none"
+                className="px-5 py-3 text-sm md:text-base font-bold text-surface-600 dark:text-surface-400 border-2 border-surface-200 dark:border-surface-800 rounded-xl hover:border-surface-300 dark:hover:border-surface-700 hover:bg-surface-50 dark:hover:bg-surface-900 hover:text-surface-900 dark:hover:text-white transition-all w-full sm:w-auto flex justify-center disabled:opacity-50 disabled:pointer-events-none"
               >
                 Try Standard Platform
               </button>
             </div>
           </div>
 
-          {/* Dashboard Mockup (Staggers out slightly before hero) */}
-          <div className="w-full max-w-5xl px-6 mb-12">
+        </section>
+
+        <section
+          className={`px-6 pb-20 md:pb-24 transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)] ${isDissolving ? 'opacity-0 blur-xl scale-95 translate-y-8 delay-[900ms]' : 'opacity-100 blur-0 scale-100 translate-y-0 delay-0'
+            }`}
+        >
+          <div className="w-full max-w-5xl mx-auto mb-12">
             <div className={`bg-white dark:bg-[#131B2C] rounded-[2rem] shadow-xl dark:shadow-2xl border border-surface-200 dark:border-[#1E293B] p-8 transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)] ${isDissolving ? 'opacity-0 blur-xl scale-95 translate-y-8 delay-[900ms]' : 'opacity-100 blur-0 scale-100 translate-y-0 delay-0'
               }`}>
               {/* Daily Stats */}
@@ -237,19 +270,19 @@ function HomePage() {
                   <span className="font-bold text-surface-900 dark:text-white text-sm">Level 8</span>
                 </div>
                 <div className="ml-auto w-48 h-3 bg-surface-100 dark:bg-[#0B0F19] rounded-full overflow-hidden border border-surface-200 dark:border-[#1E293B]">
-                  <div className="h-full bg-[#10b981] rounded-full w-[80%]"></div>
+                  <div className="h-full bg-[#069494] rounded-full w-[80%]"></div>
                 </div>
               </div>
 
               {/* Course Grid */}
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[
-                  { title: "Biology 101", icon: "📖", color: "bg-surface-100 dark:bg-[#1E293B] text-surface-900 dark:text-white", progress: "72%", progressColor: "bg-[#10b981]" },
-                  { title: "Spanish", icon: "🌐", color: "bg-surface-100 dark:bg-[#1E293B] text-surface-900 dark:text-white", progress: "45%", progressColor: "bg-[#10b981]" },
-                  { title: "Calculus", icon: "📈", color: "bg-surface-100 dark:bg-[#1E293B] text-surface-900 dark:text-white", progress: "30%", progressColor: "bg-[#10b981]" },
-                  { title: "Python", icon: "⚙️", color: "bg-surface-100 dark:bg-[#1E293B] text-surface-900 dark:text-white", progress: "88%", progressColor: "bg-[#10b981]" },
+                  { title: "Biology 101", icon: "📖", color: "bg-surface-100 dark:bg-[#1E293B] text-surface-900 dark:text-white", progress: "72%", progressColor: "bg-[#069494]" },
+                  { title: "Spanish", icon: "🌐", color: "bg-surface-100 dark:bg-[#1E293B] text-surface-900 dark:text-white", progress: "45%", progressColor: "bg-[#069494]" },
+                  { title: "Calculus", icon: "📈", color: "bg-surface-100 dark:bg-[#1E293B] text-surface-900 dark:text-white", progress: "30%", progressColor: "bg-[#069494]" },
+                  { title: "Python", icon: "⚙️", color: "bg-surface-100 dark:bg-[#1E293B] text-surface-900 dark:text-white", progress: "88%", progressColor: "bg-[#069494]" },
                   { title: "Art History", icon: "⭐", color: "bg-surface-100 dark:bg-[#1E293B] text-surface-900 dark:text-white", progress: "15%", progressColor: "bg-surface-300 dark:bg-surface-600" },
-                  { title: "Physics", icon: "📊", color: "bg-surface-100 dark:bg-[#1E293B] text-surface-900 dark:text-white", progress: "60%", progressColor: "bg-[#10b981]" },
+                  { title: "Physics", icon: "📊", color: "bg-surface-100 dark:bg-[#1E293B] text-surface-900 dark:text-white", progress: "60%", progressColor: "bg-[#069494]" },
                 ].map((course, idx) => (
                   <div key={idx} className="bg-surface-50 dark:bg-[#0B0F19] border border-surface-200 dark:border-[#1E293B] rounded-2xl p-5 hover:bg-surface-100 dark:hover:bg-[#1E293B] hover:border-surface-300 dark:hover:border-surface-700 transition-all cursor-pointer group">
                     <div className="flex items-center gap-3 mb-4">
@@ -265,7 +298,7 @@ function HomePage() {
                           <div className={`h-full ${course.progressColor} rounded-full`} style={{ width: course.progress }}></div>
                         </div>
                       </div>
-                      <div className="w-8 h-8 rounded-full border border-surface-200 dark:border-surface-700 flex items-center justify-center text-surface-400 dark:text-surface-500 group-hover:text-[#10b981] group-hover:border-[#10b981] transition-colors bg-white dark:bg-[#131B2C]">
+                      <div className="w-8 h-8 rounded-full border border-surface-200 dark:border-surface-700 flex items-center justify-center text-surface-400 dark:text-surface-500 group-hover:text-[#069494] group-hover:border-[#069494] transition-colors bg-white dark:bg-[#131B2C]">
                         <svg className="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
                       </div>
                     </div>
@@ -285,23 +318,6 @@ function HomePage() {
 
           <div className={`text-center px-6 max-w-2xl mx-auto flex flex-col items-center transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)] ${isDissolving ? 'opacity-0 blur-xl scale-95 translate-y-8 delay-[900ms]' : 'opacity-100 blur-0 scale-100 translate-y-0 delay-0'
             }`}>
-            <p className="text-lg text-surface-600 dark:text-surface-500 font-medium leading-relaxed mb-6">
-              Beautiful, isn't it? Now imagine someone who can't see it. Someone who can't click. Someone who can't scroll.
-            </p>
-          </div>
-
-        </section>
-
-        {/* Stats strip */}
-        <section className={`bg-white dark:bg-[#0B0F19] border-y border-surface-200 dark:border-[#1E293B] transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)] ${isDissolving ? 'opacity-0 blur-xl scale-95 translate-y-8 delay-[600ms]' : 'opacity-100 blur-0 scale-100 translate-y-0 delay-0'
-          }`}>
-          <div className="max-w-5xl mx-auto px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((s) => (
-              <div key={s.label} className="text-center">
-                <p className="text-4xl font-display font-black text-[#10b981]">{s.value}</p>
-                <p className="text-sm font-semibold text-surface-500 dark:text-surface-400 mt-1">{s.label}</p>
-              </div>
-            ))}
           </div>
         </section>
 
@@ -309,7 +325,7 @@ function HomePage() {
         <section id="features" className={`px-6 py-20 md:py-28 max-w-5xl mx-auto transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)] ${isDissolving ? 'opacity-0 blur-xl scale-95 translate-y-8 delay-[300ms]' : 'opacity-100 blur-0 scale-100 translate-y-0 delay-0'
           }`}>
           <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-4xl font-display font-black text-surface-900 dark:text-white mb-3 tracking-tight">
+            <h2 className="text-3xl md:text-4xl font-display font-black text-[#069494] mb-3 tracking-tight">
               Why learners love LearnHub
             </h2>
             <p className="text-base font-medium text-surface-600 dark:text-surface-400 max-w-xl mx-auto">
@@ -321,10 +337,10 @@ function HomePage() {
             {features.map((f) => (
               <div
                 key={f.title}
-                className="group p-8 rounded-3xl bg-white dark:bg-[#131B2C] shadow-sm border border-surface-200 dark:border-[#1E293B] hover:border-[#10b981]/50 dark:hover:border-[#10b981]/50 hover:-translate-y-1 transition-all duration-200"
+                className="group p-8 rounded-3xl bg-white dark:bg-[#131B2C] shadow-sm border border-surface-200 dark:border-[#1E293B] hover:border-[#069494]/50 dark:hover:border-[#069494]/50 hover:-translate-y-1 transition-all duration-200"
               >
-                <div className="w-12 h-12 rounded-2xl bg-[#10b981]/10 flex items-center justify-center mb-6 group-hover:bg-[#10b981]/20 transition-colors">
-                  <f.icon className="w-6 h-6 text-[#10b981]" />
+                <div className="w-12 h-12 rounded-2xl bg-[#069494]/10 flex items-center justify-center mb-6 group-hover:bg-[#069494]/20 transition-colors">
+                  <f.icon className="w-6 h-6 text-[#069494]" />
                 </div>
                 <h3 className="text-xl font-display font-bold text-surface-900 dark:text-white mb-3">{f.title}</h3>
                 <p className="text-sm font-medium text-surface-600 dark:text-surface-400 leading-relaxed">{f.description}</p>
@@ -350,45 +366,11 @@ function HomePage() {
                 { step: "03", title: "Track progress", desc: "Watch your streaks grow and unlock new levels." },
               ].map((s) => (
                 <div key={s.step} className="text-center">
-                  <div className="w-14 h-14 rounded-full bg-[#10b981]/10 flex items-center justify-center mx-auto mb-4 border border-[#10b981]/20">
-                    <span className="text-lg font-display font-black text-[#10b981]">{s.step}</span>
+                  <div className="w-14 h-14 rounded-full bg-[#069494]/10 flex items-center justify-center mx-auto mb-4 border border-[#069494]/20">
+                    <span className="text-lg font-display font-black text-[#069494]">{s.step}</span>
                   </div>
                   <h3 className="text-xl font-display font-bold text-surface-900 dark:text-white mb-2">{s.title}</h3>
                   <p className="text-sm font-medium text-surface-600 dark:text-surface-400">{s.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Testimonials */}
-        <section className={`px-6 py-20 md:py-28 transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)] ${isDissolving ? 'opacity-0 blur-xl scale-95 translate-y-8 delay-[0ms]' : 'opacity-100 blur-0 scale-100 translate-y-0 delay-0'
-          }`}>
-          <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-14">
-              <h2 className="text-3xl md:text-4xl font-display font-black text-surface-900 dark:text-white mb-3 tracking-tight">
-                Loved by learners worldwide
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {testimonials.map((t) => (
-                <div
-                  key={t.name}
-                  className="p-8 rounded-3xl bg-white dark:bg-[#131B2C] shadow-sm border border-surface-200 dark:border-[#1E293B] flex flex-col justify-between hover:border-[#10b981]/30 transition-colors"
-                >
-                  <p className="text-sm font-medium text-surface-600 dark:text-surface-300 leading-relaxed mb-6 italic">
-                    "{t.quote}"
-                  </p>
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-[#10b981]/10 border border-[#10b981]/20 flex items-center justify-center shrink-0">
-                      <span className="text-sm font-display font-bold text-[#10b981]">{t.avatar}</span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-display font-bold text-surface-900 dark:text-white leading-tight mb-0.5">{t.name}</p>
-                      <p className="text-xs font-medium text-surface-500">{t.role}</p>
-                    </div>
-                  </div>
                 </div>
               ))}
             </div>
@@ -399,7 +381,7 @@ function HomePage() {
         <section className={`px-6 py-12 md:py-24 max-w-4xl mx-auto transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)] ${isDissolving ? 'opacity-0 blur-xl scale-95 translate-y-8 delay-[0ms]' : 'opacity-100 blur-0 scale-100 translate-y-0 delay-0'
           }`}>
           <div className="text-center bg-gradient-to-br from-surface-100 dark:from-[#131B2C] to-white dark:to-[#0B0F19] rounded-[2.5rem] shadow-xl dark:shadow-2xl border border-surface-200 dark:border-[#1E293B] p-12 md:p-16 flex flex-col items-center">
-            <Trophy className="w-12 h-12 text-[#10b981] mx-auto mb-6" />
+            <Trophy className="w-12 h-12 text-[#069494] mx-auto mb-6" />
             <h2 className="text-3xl md:text-4xl font-display font-black text-surface-900 dark:text-white mb-4 tracking-tight">
               Ready to experience the future?
             </h2>
@@ -410,9 +392,9 @@ function HomePage() {
               <button
                 onClick={initiateVoidSequence}
                 disabled={isDissolving}
-                className="bg-[#10b981] text-white px-8 py-3.5 rounded-full font-bold text-lg flex items-center justify-center gap-2 hover:bg-[#059669] hover:-translate-y-0.5 transition-all shadow-sm order-1 sm:order-2 disabled:opacity-50 disabled:pointer-events-none"
+                className="bg-[#069494] text-white px-5 py-2.5 rounded-lg font-bold text-base flex items-center justify-center gap-2 hover:bg-[#047c7c] hover:-translate-y-0.5 transition-all shadow-sm order-1 sm:order-2 disabled:opacity-50 disabled:pointer-events-none"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
                 </svg>
                 Try Void Mode
@@ -420,16 +402,16 @@ function HomePage() {
               <button
                 onClick={() => navigate("/signup")}
                 disabled={isDissolving}
-                className="bg-white dark:bg-[#1E293B] text-surface-800 dark:text-white border border-surface-200 dark:border-surface-700 px-8 py-3.5 rounded-full font-bold text-lg flex items-center justify-center gap-2 hover:bg-surface-50 dark:hover:bg-[#334155] hover:-translate-y-0.5 transition-all shadow-sm order-2 sm:order-1 disabled:opacity-50 disabled:pointer-events-none"
+                className="bg-white dark:bg-[#1E293B] text-surface-800 dark:text-white border border-surface-200 dark:border-surface-700 px-5 py-2.5 rounded-lg font-bold text-base flex items-center justify-center gap-2 hover:bg-surface-50 dark:hover:bg-[#334155] hover:-translate-y-0.5 transition-all shadow-sm order-2 sm:order-1 disabled:opacity-50 disabled:pointer-events-none"
               >
                 Get Started Free
-                <ArrowRight className="w-5 h-5" />
+                <ArrowRight className="w-4 h-4" />
               </button>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-5 mt-8 text-xs font-medium text-surface-500">
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-[#10b981]" /> No credit card</span>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-[#10b981]" /> Free forever</span>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-[#10b981]" /> Fully accessible</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-[#069494]" /> No credit card</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-[#069494]" /> Free forever</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-[#069494]" /> Fully accessible</span>
             </div>
           </div>
         </section>
