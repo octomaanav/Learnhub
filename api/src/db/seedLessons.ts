@@ -10,7 +10,7 @@ import type { StructuredChapter, UnitLessons } from "../../types/index.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const LESSONS_DATA_DIR = join(__dirname, "../../data/lessons");
+const LESSONS_DATA_DIR = join(process.cwd(), "data/lessons");
 
 // Type guard to check if data is in old format (UnitLessons[])
 function isOldFormat(data: unknown[]): data is UnitLessons[] {
