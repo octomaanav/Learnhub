@@ -39,7 +39,7 @@
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "pdf-parse": "^1.1.4",
-    "pdfjs-dist": "^5.4.624",
+    "pdfjs-dist": "^4.10.38",
     "pg": "^8.16.3",
     "uuid": "^13.0.0",
     "wavefile": "^11.0.0"
