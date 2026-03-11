@@ -32,13 +32,10 @@ RUN apt-get update && apt-get install -y \
     libasound2 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install only production dependencies
-COPY package*.json ./
-# Omit dev dependencies to keep image small
-RUN npm ci --only=production
-
-# Copy built artifacts from builder
+# Copy built artifacts and node_modules from builder
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY package*.json ./
 
 # Copy data directory (needed for seeding)
 COPY --from=builder /app/data ./data
