@@ -60,7 +60,13 @@ export class AudioRecorder extends EventEmitter {
   stop() {
     this.source?.disconnect();
     this.stream?.getTracks().forEach((track) => track.stop());
+    // Close the AudioContext so a fresh one (with a new worklet scope) is created on next start()
+    if (this.audioContext && this.audioContext.state !== 'closed') {
+      this.audioContext.close().catch(() => { });
+    }
     this.stream = undefined;
+    this.audioContext = undefined;
+    this.source = undefined;
     this.recordingWorklet = undefined;
     this.recording = false;
   }

@@ -3,6 +3,13 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
+# Install native build dependencies for node-gyp (e.g. for speaker, sqlite, etc)
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    alsa-lib-dev
+
 # Install dependencies including devDependencies (needed for tsc)
 COPY package*.json ./
 RUN npm ci
@@ -17,6 +24,9 @@ RUN npm run build
 FROM node:18-alpine
 
 WORKDIR /app
+
+# Install runtime dependencies for native modules (e.g. speaker)
+RUN apk add --no-cache alsa-lib
 
 # Install only production dependencies
 COPY package*.json ./

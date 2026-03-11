@@ -45,6 +45,8 @@ export function useGeminiLive(): UseLiveAPIResults {
   const [connected, setConnected] = useState(false);
   const [_setupComplete, setSetupComplete] = useState(false);
   const [volume, setVolume] = useState(0);
+  const intentionalDisconnectRef = useRef(false);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!audioStreamerRef.current) {
@@ -69,6 +71,26 @@ export function useGeminiLive(): UseLiveAPIResults {
     const onClose = (_event: CloseEvent) => {
       setConnected(false);
       setSetupComplete(false);
+
+      // Auto-reconnect if the close was NOT intentional (i.e. timeout or server drop)
+      if (!intentionalDisconnectRef.current) {
+        console.warn('[Gemini Live Hook] Connection dropped unexpectedly. Attempting auto-reconnect in 1s...');
+        reconnectTimerRef.current = setTimeout(async () => {
+          try {
+            if (config && Object.keys(config).length > 0) {
+              // Reset status so connect() doesn't bail
+              (client as any)._status = 'disconnected';
+              (client as any)._session = null;
+              const success = await client.connect(model, config);
+              if (success) {
+                console.log('[Gemini Live Hook] Auto-reconnect successful!');
+              }
+            }
+          } catch (err) {
+            console.error('[Gemini Live Hook] Auto-reconnect failed:', err);
+          }
+        }, 1000);
+      }
     };
 
     const onError = (error: ErrorEvent) => {
@@ -120,6 +142,8 @@ export function useGeminiLive(): UseLiveAPIResults {
       throw new Error("config has not been set");
     }
 
+    intentionalDisconnectRef.current = false;
+
     // Disconnect first if already connected
     if (client.status === "connected") {
       client.disconnect();
@@ -134,6 +158,11 @@ export function useGeminiLive(): UseLiveAPIResults {
   }, [client, config, model]);
 
   const disconnect = useCallback(async () => {
+    intentionalDisconnectRef.current = true;
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
+    }
     client.disconnect();
     setConnected(false);
   }, [setConnected, client]);

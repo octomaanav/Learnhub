@@ -9,11 +9,15 @@ import { fetchSubjectsWithChapters } from '../data/curriculumData';
 import { toolDeclarations } from '../utils/toolDeclarations';
 import { CommandExecutor } from '../services/commandExecutor';
 
+export type AgentMode = 'normal' | 'zen';
+
 interface VoiceAgentContextType {
   isListening: boolean;
   isSupported: boolean;
   transcript: string;
   error: string | null;
+  agentMode: AgentMode;
+  setAgentMode: (mode: AgentMode) => void;
   startListening: () => void;
   stopListening: () => void;
   toggleListening: () => void;
@@ -33,6 +37,68 @@ interface VoiceAgentProviderProps {
   children: React.ReactNode;
 }
 
+// =============================================================================
+// SYSTEM INSTRUCTIONS
+// =============================================================================
+
+function getNormalSystemInstruction(userName: string, subjects: string[]): string {
+  return `You are a voice assistant for an educational platform called LearnHub. You can communicate in any language.
+Your ONLY job is to help the student NAVIGATE the platform and RECITE lessons that are stored in the database.
+
+Current Student Name: ${userName}
+${subjects.length > 0 ? `Their subjects are: ${subjects.join(', ')}.` : ''}
+
+RULES:
+1. You are a NAVIGATOR and LESSON READER only. You do NOT teach new concepts from your own knowledge.
+2. When the user asks to go to a page, use the 'navigate' or 'openLesson' tool.
+3. When the user asks you to read or recite a lesson, use 'queryKnowledgeBase' to fetch the lesson article from the database and read it out loud to them word for word.
+4. If the user wants to explore topics not in the database, suggest they switch to Zen Mode for a deeper learning experience.
+5. Keep responses short and action-oriented. You are an assistant, not a teacher.
+
+Available commands:
+- Navigation: dashboard, home, setup, chapter, lesson
+- Lesson Control: play, pause, resume, stop, next, previous
+- Discovery: list_chapters, list_subjects, current_lesson, help
+- Accessibility: focus_mode, braille, story_mode
+- Database lookup: queryKnowledgeBase
+
+Be concise, helpful, and action-oriented.`;
+}
+
+function getZenSystemInstruction(userName: string, subjects: string[], currentTopic: string): string {
+  return `You are a world-class autonomous AI tutor for an educational platform called LearnHub. You can communicate in any language.
+You are operating in ZEN MODE — a distraction-free, immersive learning environment.
+
+Current Student Name: ${userName}
+${subjects.length > 0 ? `Their curriculum subjects are: ${subjects.join(', ')}.` : ''}
+Current Topic in their learning path: ${currentTopic}
+
+YOUR ROLE: You are a PROACTIVE LEARNING GUIDE and CREATIVE STORYTELLER.
+
+CRITICAL BEHAVIOR:
+1. When the session starts, PROACTIVELY welcome the student by name, mention their "Current Topic", and ASK: "Would you like to continue with [topic], or would you like to explore something new?" DO NOT start teaching immediately. Wait for their answer.
+
+2. IF THE USER WANTS TO CONTINUE WITH THEIR CURRICULUM LESSON:
+   - You MUST call 'queryKnowledgeBase' with the topic name to fetch the actual lesson article from the LearnHub database.
+   - If the database returns content (found_in_db = true), you MUST read and teach from THAT content. Do NOT make up your own version. Explain it naturally and engagingly as a teacher would, but stay faithful to the source material.
+   - Show relevant visuals using 'generateVisualCanvas' as you teach.
+
+3. IF THE USER WANTS TO LEARN SOMETHING NEW (not in the curriculum):
+   - Use your extensive world knowledge as Gemini to teach them.
+   - Be a creative storyteller. Structure the lesson with an intro, core concepts, examples, and a summary.
+   - Show relevant visuals using 'generateVisualCanvas' as you teach.
+
+4. After finishing a topic, ask if they want to continue or switch topics.
+
+VISUAL AIDS: As you teach, autonomously decide when a visual aid is needed. Call 'generateVisualCanvas'. CRITICAL: for 'image_prompt', provide a SHORT 1-2 word search query (e.g., 'black hole', 'mitochondria').
+
+Be friendly, authoritative, and passionate about teaching. Speak naturally.`;
+}
+
+// =============================================================================
+// PROVIDER
+// =============================================================================
+
 export const VoiceAgentProvider: React.FC<VoiceAgentProviderProps> = ({
   children,
 }) => {
@@ -43,8 +109,10 @@ export const VoiceAgentProvider: React.FC<VoiceAgentProviderProps> = ({
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [availableSubjects, setAvailableSubjects] = useState<SubjectWithChapters[]>([]);
+  const [agentMode, setAgentMode] = useState<AgentMode>('normal');
 
   const audioRecorderRef = useRef<AudioRecorder | null>(null);
+  const hasGreetedRef = useRef<boolean>(false);
 
   // Load subjects when user profile is available
   useEffect(() => {
@@ -77,41 +145,32 @@ export const VoiceAgentProvider: React.FC<VoiceAgentProviderProps> = ({
     client,
     connected: isConnected,
     connect,
+    disconnect,
     setConfig,
   } = useGeminiLive();
 
-  // Set up Gemini Live API config with tool declarations
+  // Build config based on agent mode
   useEffect(() => {
+    const subjectNames = availableSubjects.map(s => s.name);
+    const userName = user?.name || 'Student';
+    const currentTopic = user?.currentTopic || 'Introduction and Onboarding';
+
+    const systemInstruction = agentMode === 'zen'
+      ? getZenSystemInstruction(userName, subjectNames, currentTopic)
+      : getNormalSystemInstruction(userName, subjectNames);
+
+    // Normal mode: only navigation + KB query tools. Zen mode: full toolset.
+    const activeTools = agentMode === 'zen'
+      ? toolDeclarations
+      : toolDeclarations.filter(t =>
+        ['navigate', 'openLesson', 'lessonControl', 'listSubjects', 'listChapters',
+          'toggleFocusMode', 'openStoryMode', 'openBraille', 'convertBraille',
+          'queryKnowledgeBase'].includes(t.name || '')
+      );
+
     const config = {
       responseModalities: [Modality.AUDIO],
-      systemInstruction: `You are a helpful, autonomous voice assistant for an educational platform called LearnHub. You can communicate in any language.
-You help students navigate the platform, control lesson playback, and discover content.
-
-CRITICAL: You are a CREATIVE STORYTELLER and AUTONOMOUS RESEARCHER.
-1. When asked to explain a topic, use 'queryKnowledgeBase' to research it first.
-2. SYNTHESIZE the information creatively instead of just reciting facts.
-3. As you teach, autonomously decide when a visual aid is needed. Call 'generateVisualCanvas'. CRITICAL: for 'image_prompt', you MUST provide a SHORT 1-2 word search query (e.g., 'black hole', 'mitochondria') instead of a long descriptive sentence.
-
-When the user makes a request that requires an action, use the available tool/function calls. If you must respond in plain text, output a JSON response with this format:
-{
-  "hasCommand": true,
-  "command": {
-    "type": "navigate" | "lesson_control" | "discovery",
-    "action": "<specific action>",
-    "params": {}
-  },
-  "confidence": 0.0-1.0,
-  "response": "<natural language response>"
-}
-
-Available commands:
-- Navigation: dashboard, home, setup, chapter, lesson
-- Lesson Control: play, pause, resume, stop, next, previous
-- Discovery: list_chapters, list_subjects, current_lesson, help
-- Accessibility: focus_mode, braille, story_mode
-- Autonomous: queryKnowledgeBase, generateVisualCanvas
-
-Be friendly and helpful. Speak naturally and wait for the user to finish speaking before responding.`,
+      systemInstruction,
       realtimeInputConfig: {
         automaticActivityDetection: {
           disabled: false,
@@ -123,13 +182,13 @@ Be friendly and helpful. Speak naturally and wait for the user to finish speakin
       },
       tools: [
         {
-          functionDeclarations: toolDeclarations
+          functionDeclarations: activeTools
         }
       ]
     };
 
     setConfig(config);
-  }, [setConfig]);
+  }, [setConfig, agentMode, availableSubjects, user]);
 
   // Tool call handler - Execute commands from Gemini using CommandExecutor
   useEffect(() => {
@@ -192,37 +251,44 @@ Be friendly and helpful. Speak naturally and wait for the user to finish speakin
         }
       }
 
-      // Create audio recorder if needed
-      if (!audioRecorderRef.current) {
-        audioRecorderRef.current = new AudioRecorder(16000);
+      // Create a fresh audio recorder each time to avoid stale AudioContext/worklet issues
+      audioRecorderRef.current = new AudioRecorder(16000);
 
-        // Listen for audio data and send to Gemini Live API
-        audioRecorderRef.current.on('data', (base64Audio: string) => {
-          // Check connection status dynamically
-          const currentlyConnected = client.status === 'connected' && client.session;
-          if (currentlyConnected) {
-            try {
-              client.sendRealtimeInput([{
-                mimeType: 'audio/pcm;rate=16000',
-                data: base64Audio,
-              }]);
-            } catch (error) {
-              console.error('[Voice Agent] Error sending audio:', error);
-            }
-          } else {
-            console.warn('[Voice Agent] Not connected to Gemini Live API, cannot send audio');
+      // Listen for audio data and send to Gemini Live API
+      audioRecorderRef.current.on('data', (base64Audio: string) => {
+        // Check connection status dynamically
+        const currentlyConnected = client.status === 'connected' && client.session;
+        if (currentlyConnected) {
+          try {
+            client.sendRealtimeInput([{
+              mimeType: 'audio/pcm;rate=16000',
+              data: base64Audio,
+            }]);
+          } catch (error) {
+            console.error('[Voice Agent] Error sending audio:', error);
           }
-        });
-      }
+        } else {
+          console.warn('[Voice Agent] Not connected to Gemini Live API, cannot send audio');
+        }
+      });
 
       // Start audio recording
       await audioRecorderRef.current.start();
       setIsListening(true);
       setError(null);
 
-      // Send an initial message to trigger a greeting
-      if (client.status === 'connected') {
-        client.send([{ text: "Hi! I just entered Zen Mode. Please give me a brief, friendly 1-sentence welcome and let me know you're listening." }]);
+      // Send an initial greeting based on mode
+      if (client.status === 'connected' && !hasGreetedRef.current) {
+        hasGreetedRef.current = true;
+
+        if (agentMode === 'zen') {
+          const topicContext = user?.currentTopic
+            ? `My current curriculum topic is ${user.currentTopic}.`
+            : "I don't have a specific topic assigned yet.";
+          client.send([{ text: `Hi, I just entered Zen Mode. Give me a proactive welcome! ${topicContext} Greet me, tell me my topic, and ask if I want to continue with it or learn something new.` }]);
+        } else {
+          client.send([{ text: `Hi! I need help navigating LearnHub. Let me know what you can do for me.` }]);
+        }
       }
     } catch (err: any) {
       const errorMsg = err.message || 'Failed to start listening';
@@ -230,18 +296,24 @@ Be friendly and helpful. Speak naturally and wait for the user to finish speakin
       setError(errorMsg);
       setIsListening(false);
     }
-  }, [isConnected, connect, client]);
+  }, [isConnected, connect, client, agentMode, user]);
 
-  // Disconnect when stopping
   const stopListening = useCallback(() => {
     audioRecorderRef.current?.stop();
     setIsListening(false);
     setTranscript('');
-
-    // Optionally disconnect from Gemini (or keep connected for faster reconnection)
-    // disconnect();
+    hasGreetedRef.current = false;
   }, []);
 
+  // When agent mode changes while listening, disconnect and force a fresh session
+  useEffect(() => {
+    if (isListening) {
+      // Mode changed while active — restart the session with new config
+      stopListening();
+      disconnect();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agentMode]);
 
   const toggleListening = useCallback(() => {
     if (isListening) {
@@ -256,6 +328,8 @@ Be friendly and helpful. Speak naturally and wait for the user to finish speakin
     isSupported,
     transcript,
     error,
+    agentMode,
+    setAgentMode,
     startListening,
     stopListening,
     toggleListening,

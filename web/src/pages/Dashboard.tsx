@@ -23,7 +23,7 @@ function Dashboard() {
   const [viewMode, setViewMode] = useState<'curriculum' | 'knowledge_hub'>('curriculum');
   const [visualState, setVisualState] = useState<{ description: string, type: string, mermaidCode?: string } | null>(null);
 
-  const { startListening, stopListening } = useVoiceAgent();
+  const { startListening, stopListening, setAgentMode } = useVoiceAgent();
 
   // Telegram Linking State
   const [isTelegramModalOpen, setIsTelegramModalOpen] = useState(false);
@@ -110,11 +110,15 @@ function Dashboard() {
   // Trigger voice agent on Zen Mode toggle
   useEffect(() => {
     if (isZenMode) {
-      startListening();
+      setAgentMode('zen');
+      // Small delay so the config updates before we connect
+      const timer = setTimeout(() => startListening(), 200);
+      return () => clearTimeout(timer);
     } else {
       stopListening();
+      setAgentMode('normal');
     }
-  }, [isZenMode, startListening, stopListening]);
+  }, [isZenMode, startListening, stopListening, setAgentMode]);
 
   if (isLoading || isLoadingData) {
     return (

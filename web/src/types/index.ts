@@ -23,8 +23,8 @@ export interface User {
   email: string;
   name: string;
   profile?: UserProfile | null;
-  curriculumId?: string | null;
   classId?: string | null;
+  currentTopic?: string | null;
   isProfileComplete: boolean;
   createdAt: string;
   updatedAt: string;

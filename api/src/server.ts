@@ -23,6 +23,7 @@ import contentRouter from "./routes/content.js";
 import storyV2Router from "./routes/story_v2.js";
 import brailleV2Router from "./routes/braille_v2.js";
 import webhooksRouter from "./routes/webhooks.js";
+import { sendProactiveNudges } from "./services/telegramService.js";
 
 const app = express();
 app.set("trust proxy", 1); // Trust first proxy (Render load balancer)
@@ -123,6 +124,16 @@ app.use("/api/content", contentRouter);
 app.use("/api/story_v2", storyV2Router);
 app.use("/api/braille_v2", brailleV2Router);
 app.use("/api/webhooks", webhooksRouter);
+
+// Demo endpoint to trigger Telegram Nudge
+app.post("/api/telegram/nudge", async (req, res) => {
+  try {
+    await sendProactiveNudges();
+    res.json({ success: true, message: "Nudges triggered successfully!" });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Start DB-backed worker loop in this process (no Redis)
 startWorkerLoop().catch((err) => {

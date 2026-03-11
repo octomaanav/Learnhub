@@ -409,14 +409,45 @@ export class CommandExecutor {
   private async queryKnowledgeBase(topic: string): Promise<Record<string, unknown>> {
     try {
       console.log('[CommandExecutor] Autonomous agent is querying knowledge base for:', topic);
-      // For the hackathon, we simulate a textbook lookup but instruct Gemini to synthesize its own world knowledge.
+
+      const response = await fetch(apiUrl(`/api/lessons/knowledge-base/search?q=${encodeURIComponent(topic)}`), {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch from knowledge base');
+      }
+
+      const data = await response.json();
+
+      if (data.results && data.results.length > 0) {
+        console.log(`[CommandExecutor] Found ${data.results.length} matches in database for: ${topic}`);
+        // Return the best match's content to Gemini so it can read it aloud
+        const bestMatch = data.results[0];
+        return {
+          topic,
+          found_in_db: true,
+          source_title: bestMatch.title,
+          content: bestMatch.content,
+          instruction: "CRITICAL: I found this exact lesson in the LearnHub curriculum database! You MUST use the provided `content` to teach the user. Explain it naturally and engagingly as a teacher.",
+        };
+      }
+
+      // If not found in our DB, instruct Gemini to use its own knowledge
+      console.log(`[CommandExecutor] Topic not found in DB. Agent will use world knowledge for: ${topic}`);
       return {
         topic,
         found_in_db: false,
-        instruction: "Use your extensive internal knowledge as Gemini to synthesize a structured, highly educational answer about this topic. Be a creative storyteller."
+        instruction: "This topic is NOT in the LearnHub curriculum database. Since the user wants to 'learn anything', use your extensive internal knowledge as Gemini to synthesize a structured, highly educational answer about this topic. Be a creative storyteller."
       };
     } catch (error) {
-      return { error: 'Failed to query' };
+      console.error('[CommandExecutor] queryKnowledgeBase error:', error);
+      return {
+        topic,
+        error: 'Failed to query database. Fallback to using your own internal Gemini knowledge.'
+      };
     }
   }
 

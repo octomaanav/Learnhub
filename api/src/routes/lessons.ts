@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "../db/index.js";
 import { chapters, lessons as lessonsTable, classes, curricula, gradeSubjects, subjects } from "../db/schema.js";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import type { Unit, UnitLessons, Book, StructuredChapter, StructuredCurriculum } from "../../types/index.js";
 import { callGeminiJson, hasGeminiApiKey } from "../utils/gemini.js";
 import { isAuthenticated } from "../middleware/auth.js";
@@ -982,6 +982,38 @@ lessonsRouter.get("/structured/:classId/:subjectId/:chapterSlug/:sectionSlug/:mi
       error: "Failed to load microsection",
       details: error instanceof Error ? error.message : String(error)
     });
+  }
+});
+
+// ============================================================================
+// AI Agent Knowledge Base Search
+// ============================================================================
+
+lessonsRouter.get("/knowledge-base/search", async (req, res) => {
+  try {
+    const query = req.query.q as string;
+    if (!query) {
+      return res.status(400).json({ error: "Query parameter 'q' is required" });
+    }
+
+    // Very simple search just looking for partial matches in the title or content
+    // In a real app we would use full-text search or vector similarity
+    const results = await db.select({
+      id: lessonsTable.id,
+      title: lessonsTable.title,
+      slug: lessonsTable.slug,
+      content: lessonsTable.content,
+    })
+      .from(lessonsTable)
+      .where(
+        sql`LOWER(${lessonsTable.title}) LIKE LOWER(${`%${query}%`})`
+      )
+      .limit(3);
+
+    res.json({ results });
+  } catch (error) {
+    console.error("Error searching knowledge base:", error);
+    res.status(500).json({ error: "Failed to search knowledge base" });
   }
 });
 
