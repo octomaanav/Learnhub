@@ -99,7 +99,7 @@ Example: "Hey Manav! You were doing great yesterday. Got 5 minutes right now to 
 
             try {
                 const nudgeMessage = await callGemini(prompt);
-                await telegramBot.sendMessage(user.telegramChatId, nudgeMessage);
+                await telegramBot.sendMessage(user.telegramChatId, nudgeMessage || "Time to learn!");
                 console.log(`[Telegram Service] Sent nudge to ${user.name}`);
             } catch (geminiError) {
                 console.error(`[Telegram Service] Failed to generate/send nudge for ${user.id}:`, geminiError);
