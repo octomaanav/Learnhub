@@ -159,8 +159,6 @@ function AdminLessonEditorPage() {
     }
   }, [lessonId]);
 
-  console.log(lessons)
-
   const handleSaveLesson = async () => {
     if (!selectedChapterId || !selectedLesson) {
       setError('Please select a chapter and lesson');

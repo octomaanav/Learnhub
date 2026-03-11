@@ -38,7 +38,7 @@ export const VoiceAgentProvider: React.FC<VoiceAgentProviderProps> = ({
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +49,7 @@ export const VoiceAgentProvider: React.FC<VoiceAgentProviderProps> = ({
   // Load subjects when user profile is available
   useEffect(() => {
     if (user?.profile?.curriculumId && user?.profile?.classId) {
-      
+
       fetchSubjectsWithChapters(user.profile.curriculumId, user.profile.classId)
         .then((subjects) => {
           setAvailableSubjects(subjects);
@@ -73,10 +73,10 @@ export const VoiceAgentProvider: React.FC<VoiceAgentProviderProps> = ({
   }, [navigate, user, availableSubjects]);
 
   // Gemini Live API hook
-  const { 
-    client, 
-    connected: isConnected, 
-    connect, 
+  const {
+    client,
+    connected: isConnected,
+    connect,
     setConfig,
   } = useGeminiLive();
 
@@ -84,8 +84,13 @@ export const VoiceAgentProvider: React.FC<VoiceAgentProviderProps> = ({
   useEffect(() => {
     const config = {
       responseModalities: [Modality.AUDIO],
-      systemInstruction: `You are a helpful voice assistant for an educational platform called LearnHub. 
+      systemInstruction: `You are a helpful, autonomous voice assistant for an educational platform called LearnHub. You can communicate in any language.
 You help students navigate the platform, control lesson playback, and discover content.
+
+CRITICAL: You are a CREATIVE STORYTELLER and AUTONOMOUS RESEARCHER.
+1. When asked to explain a topic, use 'queryKnowledgeBase' to research it first.
+2. SYNTHESIZE the information creatively instead of just reciting facts.
+3. As you teach, autonomously decide when a visual aid is needed. Call 'generateVisualCanvas'. CRITICAL: for 'image_prompt', you MUST provide a SHORT 1-2 word search query (e.g., 'black hole', 'mitochondria') instead of a long descriptive sentence.
 
 When the user makes a request that requires an action, use the available tool/function calls. If you must respond in plain text, output a JSON response with this format:
 {
@@ -104,6 +109,7 @@ Available commands:
 - Lesson Control: play, pause, resume, stop, next, previous
 - Discovery: list_chapters, list_subjects, current_lesson, help
 - Accessibility: focus_mode, braille, story_mode
+- Autonomous: queryKnowledgeBase, generateVisualCanvas
 
 Be friendly and helpful. Speak naturally and wait for the user to finish speaking before responding.`,
       realtimeInputConfig: {
@@ -128,25 +134,15 @@ Be friendly and helpful. Speak naturally and wait for the user to finish speakin
   // Tool call handler - Execute commands from Gemini using CommandExecutor
   useEffect(() => {
     const onToolCall = async (toolCall: any) => {
-      
+
       // Execute commands using the command executor service
       const responses = await commandExecutor.executeToolCall(toolCall);
-      
+
       // Send tool responses back to Gemini
       if (responses.length > 0) {
         client.sendToolResponse({
           functionResponses: responses
         });
-      }
-    };
-
-    const onContent = (data: any) => {
-      if (data.modelTurn?.parts) {
-        for (const part of data.modelTurn.parts) {
-          if (part.text) {
-            console.log('[Voice Agent] Gemini text response:', part.text);
-          }
-        }
       }
     };
 
@@ -162,27 +158,25 @@ Be friendly and helpful. Speak naturally and wait for the user to finish speakin
     };
 
     client.on('toolcall', onToolCall);
-    client.on('content', onContent);
     client.on('audio', onAudio);
     client.on('error', onError);
 
     return () => {
-      client.off('toolcall', onToolCall);
-      client.off('content', onContent);
+      client.off('toolcall', onToolCall)
       client.off('audio', onAudio);
       client.off('error', onError);
     };
   }, [client, commandExecutor]);
 
   // Check browser support for audio
-  const isSupported = typeof navigator !== 'undefined' && 
-                      typeof navigator.mediaDevices !== 'undefined' && 
-                      typeof navigator.mediaDevices.getUserMedia === 'function';
+  const isSupported = typeof navigator !== 'undefined' &&
+    typeof navigator.mediaDevices !== 'undefined' &&
+    typeof navigator.mediaDevices.getUserMedia === 'function';
 
   // Start/stop audio recording
   const startListening = useCallback(async () => {
     try {
-      
+
       // First, ensure we're connected to Gemini Live API
       if (!isConnected || client.status !== 'connected') {
         await connect();
@@ -192,7 +186,7 @@ Be friendly and helpful. Speak naturally and wait for the user to finish speakin
           await new Promise(resolve => setTimeout(resolve, 100));
           attempts++;
         }
-        
+
         if (client.status !== 'connected') {
           throw new Error('Failed to connect to Gemini Live API - connection timeout');
         }
@@ -201,7 +195,7 @@ Be friendly and helpful. Speak naturally and wait for the user to finish speakin
       // Create audio recorder if needed
       if (!audioRecorderRef.current) {
         audioRecorderRef.current = new AudioRecorder(16000);
-        
+
         // Listen for audio data and send to Gemini Live API
         audioRecorderRef.current.on('data', (base64Audio: string) => {
           // Check connection status dynamically
@@ -225,6 +219,11 @@ Be friendly and helpful. Speak naturally and wait for the user to finish speakin
       await audioRecorderRef.current.start();
       setIsListening(true);
       setError(null);
+
+      // Send an initial message to trigger a greeting
+      if (client.status === 'connected') {
+        client.send([{ text: "Hi! I just entered Zen Mode. Please give me a brief, friendly 1-sentence welcome and let me know you're listening." }]);
+      }
     } catch (err: any) {
       const errorMsg = err.message || 'Failed to start listening';
       console.error('[Voice Agent] Start error:', errorMsg);
@@ -238,7 +237,7 @@ Be friendly and helpful. Speak naturally and wait for the user to finish speakin
     audioRecorderRef.current?.stop();
     setIsListening(false);
     setTranscript('');
-    
+
     // Optionally disconnect from Gemini (or keep connected for faster reconnection)
     // disconnect();
   }, []);

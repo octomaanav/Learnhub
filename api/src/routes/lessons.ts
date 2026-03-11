@@ -701,12 +701,32 @@ lessonsRouter.get("/structured/:classId/:subjectId", async (req, res) => {
 
     // Find all chapters for this class and subject
     // 1. Find gradeSubjectId for classId and subjectId
+    let targetClassId = classId;
+    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
+    if (!uuidRegex.test(classId)) {
+      const [classRec] = await db.select().from(classes).where(eq(classes.slug, classId)).limit(1);
+      if (!classRec) {
+        return res.status(404).json({ error: `Class with slug '${classId}' not found` });
+      }
+      targetClassId = classRec.id;
+    }
+
+    let targetSubjectId = subjectId;
+    if (!uuidRegex.test(subjectId)) {
+      const [subjectRec] = await db.select().from(subjects).where(eq(subjects.slug, subjectId)).limit(1);
+      if (!subjectRec) {
+        return res.status(404).json({ error: `Subject with slug '${subjectId}' not found` });
+      }
+      targetSubjectId = subjectRec.id;
+    }
+
     const [gradeSubject] = await db
       .select()
       .from(gradeSubjects)
       .where(and(
-        eq(gradeSubjects.classId, classId),
-        eq(gradeSubjects.subjectId, subjectId)
+        eq(gradeSubjects.classId, targetClassId),
+        eq(gradeSubjects.subjectId, targetSubjectId)
       ))
       .limit(1);
 
@@ -777,11 +797,28 @@ lessonsRouter.get("/structured/:classId/:subjectId/:chapterSlug", async (req, re
     }
 
     // Find gradeSubjectId for classId and subjectId (UUID)
+    // The classId param might be a UUID (for standard curriculum) or a slug (like 'all-levels' for Knowledge Hub)
+
+    // First find the class either by ID or slug
+    let targetClassId = classId;
+
+    // Simple UUID regex
+    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
+    if (!uuidRegex.test(classId)) {
+      // It's a slug, so look up the class UUID
+      const [classRec] = await db.select().from(classes).where(eq(classes.slug, classId)).limit(1);
+      if (!classRec) {
+        return res.status(404).json({ error: `Class with slug '${classId}' not found` });
+      }
+      targetClassId = classRec.id;
+    }
+
     const [gradeSubject] = await db
       .select()
       .from(gradeSubjects)
       .where(and(
-        eq(gradeSubjects.classId, classId),
+        eq(gradeSubjects.classId, targetClassId),
         eq(gradeSubjects.subjectId, subject.id)
       ))
       .limit(1);
@@ -858,11 +895,22 @@ lessonsRouter.get("/structured/:classId/:subjectId/:chapterSlug/:sectionSlug/:mi
     }
 
     // Find gradeSubjectId for classId and subjectId (UUID)
+    let targetClassId = classId;
+    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
+    if (!uuidRegex.test(classId)) {
+      const [classRec] = await db.select().from(classes).where(eq(classes.slug, classId)).limit(1);
+      if (!classRec) {
+        return res.status(404).json({ error: `Class with slug '${classId}' not found` });
+      }
+      targetClassId = classRec.id;
+    }
+
     const [gradeSubject] = await db
       .select()
       .from(gradeSubjects)
       .where(and(
-        eq(gradeSubjects.classId, classId),
+        eq(gradeSubjects.classId, targetClassId),
         eq(gradeSubjects.subjectId, subject.id)
       ))
       .limit(1);

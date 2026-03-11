@@ -2,12 +2,13 @@
  * Command Executor Service
  * Handles execution of all voice commands/tool calls from Gemini
  */
-import type { SubjectWithChapters, StructuredChapter } from '../types';
+import { NavigateFunction } from 'react-router-dom';
+import type { SubjectWithChapters, StructuredChapter, User } from '../types';
 import { apiUrl } from '../utils/api';
 
 export interface CommandExecutorDependencies {
-  navigate: (path: string, options?: unknown) => void;
-  user: { profile?: { curriculumId: string; classId: string; chapterIds: string[] } } | null;
+  navigate: NavigateFunction;
+  user: User | null;
   availableSubjects: SubjectWithChapters[];
 }
 
@@ -89,6 +90,17 @@ export class CommandExecutor {
             success = this.openBraille();
             result = { success };
             break;
+
+          case 'queryKnowledgeBase':
+            result = await this.queryKnowledgeBase(call.args.topic);
+            success = true;
+            break;
+
+          case 'generateVisualCanvas':
+            success = this.generateVisualCanvas(call.args.description, call.args.type, call.args.mermaidCode);
+            result = { success };
+            break;
+
 
           default:
             console.warn('[CommandExecutor] Unknown tool:', call.name);
@@ -388,6 +400,40 @@ export class CommandExecutor {
     } catch (error) {
       console.error('[CommandExecutor] List chapters error:', error);
       return { chapters: [], error: 'Failed to load chapters' };
+    }
+  }
+
+  /**
+   * Autonomously search for information
+   */
+  private async queryKnowledgeBase(topic: string): Promise<Record<string, unknown>> {
+    try {
+      console.log('[CommandExecutor] Autonomous agent is querying knowledge base for:', topic);
+      // For the hackathon, we simulate a textbook lookup but instruct Gemini to synthesize its own world knowledge.
+      return {
+        topic,
+        found_in_db: false,
+        instruction: "Use your extensive internal knowledge as Gemini to synthesize a structured, highly educational answer about this topic. Be a creative storyteller."
+      };
+    } catch (error) {
+      return { error: 'Failed to query' };
+    }
+  }
+
+  /**
+   * Push visual to the blank screen
+   */
+  private generateVisualCanvas(description: string, type: string, mermaidCode?: string): boolean {
+    try {
+      console.log('[CommandExecutor] Agent pushed a visual to the canvas:', description, type);
+      const event = new CustomEvent('visual-canvas-update', {
+        detail: { description, type, mermaidCode }
+      });
+      window.dispatchEvent(event);
+      return true;
+    } catch (error) {
+      console.error('[CommandExecutor] Failed to push visual:', error);
+      return false;
     }
   }
 

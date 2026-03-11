@@ -105,7 +105,6 @@ export const toolDeclarations: FunctionDeclaration[] = [
     description: "Open story mode for the current topic/lesson",
     parameters: {
       type: Type.OBJECT,
-      properties: {}
     }
   },
   {
@@ -114,6 +113,42 @@ export const toolDeclarations: FunctionDeclaration[] = [
     parameters: {
       type: Type.OBJECT,
       properties: {}
+    }
+  },
+  {
+    name: "queryKnowledgeBase",
+    description: "Autonomously query the textbook or knowledge base for information to synthesize before explaining a complex topic to the user.",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        topic: {
+          type: Type.STRING,
+          description: "The topic or concept to research"
+        }
+      },
+      required: ["topic"]
+    }
+  },
+  {
+    name: "generateVisualCanvas",
+    description: "Generate an educational visual aid (diagram or illustrative prompt) and push it to the user's blank screen to interleave visuals with your narration.",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        description: {
+          type: Type.STRING,
+          description: "Description of what the visual should show"
+        },
+        type: {
+          type: Type.STRING,
+          description: "Type of visual: 'image_prompt' or 'mermaid_diagram'"
+        },
+        mermaidCode: {
+          type: Type.STRING,
+          description: "If type is mermaid_diagram, provide the exact mermaid.js syntax here. Leave blank if image_prompt."
+        }
+      },
+      required: ["description", "type"]
     }
   }
 ];

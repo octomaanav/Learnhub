@@ -22,7 +22,16 @@ export const users = pgTable("users", {
 
   isProfileComplete: boolean("is_profile_complete").default(false).notNull(),
   telegramChatId: text("telegram_chat_id").unique(),
-  telegramPairingCode: text("telegram_pairing_code").unique(),
+  telegramLinkingCode: text("telegram_linking_code"),
+
+  // Teaching/Proactive learning state
+  lastMessageAt: timestamp("last_message_at").defaultNow().notNull(),
+  currentTopic: text("current_topic"),
+  lessonProgress: integer("lesson_progress").default(0).notNull(),
+  lessonState: text("lesson_state").default("idle").notNull(),
+  lessonInProgress: boolean("lesson_in_progress").default(false).notNull(),
+  recentHistory: jsonb("recent_history").$type<{ role: string, content: string }[]>().default([]).notNull(),
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
@@ -355,6 +364,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     references: [classes.id],
   }),
   userChapters: many(userChapters),
+  scheduledReviews: many(scheduledReviews),
 }));
 
 export const userChaptersRelations = relations(userChapters, ({ one }) => ({
@@ -365,5 +375,26 @@ export const userChaptersRelations = relations(userChapters, ({ one }) => ({
   chapter: one(chapters, {
     fields: [userChapters.chapterId],
     references: [chapters.id],
+  }),
+}));
+
+// =============================================================================
+// BACKGROUND JOBS (Spaced Repetition & Proactive Teaching)
+// =============================================================================
+
+export const scheduledReviews = pgTable("scheduled_reviews", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  studentId: uuid("student_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  concept: text("concept").notNull(),
+  dueDate: timestamp("due_date").notNull(),
+  difficulty: integer("difficulty").notNull(),
+  sent: boolean("sent").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const scheduledReviewsRelations = relations(scheduledReviews, ({ one }) => ({
+  student: one(users, {
+    fields: [scheduledReviews.studentId],
+    references: [users.id],
   }),
 }));

@@ -1,9 +1,9 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash-exp";
+const getGeminiApiKey = () => process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY;
+const getDefaultModel = () => process.env.GEMINI_MODEL || "llama-3.3-70b-versatile";
 
-if (!GEMINI_API_KEY) {
+if (!process.env.GEMINI_API_KEY) {
   console.warn("⚠️  GEMINI_API_KEY not set in environment variables");
 }
 
@@ -31,11 +31,11 @@ const fixLatexEscaping = (jsonStr: string): string => {
   let result = '';
   let i = 0;
   let inString = false;
-  
+
   while (i < jsonStr.length) {
     const char = jsonStr[i];
     const nextChar = i + 1 < jsonStr.length ? jsonStr[i + 1] : '';
-    
+
     if (char === '"') {
       let backslashCount = 0;
       let j = i - 1;
@@ -43,7 +43,7 @@ const fixLatexEscaping = (jsonStr: string): string => {
         backslashCount++;
         j--;
       }
-      
+
       if (backslashCount % 2 === 0) {
         inString = !inString;
         result += char;
@@ -53,7 +53,7 @@ const fixLatexEscaping = (jsonStr: string): string => {
       i++;
       continue;
     }
-    
+
     if (char === '\\' && inString) {
       // We're inside a string and found a backslash
       // Check if it's a valid JSON escape sequence
@@ -71,12 +71,12 @@ const fixLatexEscaping = (jsonStr: string): string => {
         continue;
       }
     }
-    
+
     // Regular character
     result += char;
     i++;
   }
-  
+
   return result;
 };
 
@@ -89,24 +89,24 @@ const fixUnescapedChars = (jsonStr: string): string => {
   let inString = false;
   let escapeNext = false;
   let stringStart = -1;
-  
+
   while (i < jsonStr.length) {
     const char = jsonStr[i];
-    
+
     if (escapeNext) {
       result += char;
       escapeNext = false;
       i++;
       continue;
     }
-    
+
     if (char === '\\') {
       result += char;
       escapeNext = true;
       i++;
       continue;
     }
-    
+
     if (char === '"') {
       inString = !inString;
       if (inString) {
@@ -116,7 +116,7 @@ const fixUnescapedChars = (jsonStr: string): string => {
       i++;
       continue;
     }
-    
+
     if (inString) {
       // Inside a string, escape control characters
       if (char === '\n') {
@@ -138,10 +138,10 @@ const fixUnescapedChars = (jsonStr: string): string => {
     } else {
       result += char;
     }
-    
+
     i++;
   }
-  
+
   return result;
 };
 
@@ -150,19 +150,19 @@ const fixUnescapedChars = (jsonStr: string): string => {
  */
 const fixCommonJsonIssues = (jsonStr: string): string => {
   let fixed = jsonStr;
-  
+
   // Remove any trailing commas before ] or }
   fixed = fixed.replace(/,(\s*[}\]])/g, '$1');
-  
+
   // Remove trailing commas in objects/arrays (more aggressive)
   fixed = fixed.replace(/,(\s*\n\s*[}\]])/g, '$1');
-  
+
   // Try to close unclosed arrays/objects at the end
   const openBraces = (fixed.match(/{/g) || []).length;
   const closeBraces = (fixed.match(/}/g) || []).length;
   const openBrackets = (fixed.match(/\[/g) || []).length;
   const closeBrackets = (fixed.match(/]/g) || []).length;
-  
+
   // Add missing closing brackets/braces
   for (let i = 0; i < openBrackets - closeBrackets; i++) {
     fixed += ']';
@@ -170,7 +170,7 @@ const fixCommonJsonIssues = (jsonStr: string): string => {
   for (let i = 0; i < openBraces - closeBraces; i++) {
     fixed += '}';
   }
-  
+
   return fixed;
 };
 
@@ -182,40 +182,40 @@ const extractJson = (text: string): string => {
   // First, try to find JSON boundaries
   const firstBrace = text.indexOf('{');
   const firstBracket = text.indexOf('[');
-  
+
   if (firstBrace === -1 && firstBracket === -1) {
     return text;
   }
-  
+
   // Find the start
   const start = firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)
     ? firstBrace
     : firstBracket;
-  
+
   // Find matching closing brace/bracket
   let depth = 0;
   let inString = false;
   let escapeNext = false;
   let end = start;
-  
+
   for (let i = start; i < text.length; i++) {
     const char = text[i];
-    
+
     if (escapeNext) {
       escapeNext = false;
       continue;
     }
-    
+
     if (char === '\\') {
       escapeNext = true;
       continue;
     }
-    
+
     if (char === '"') {
       inString = !inString;
       continue;
     }
-    
+
     if (!inString) {
       if (char === '{' || char === '[') {
         depth++;
@@ -228,7 +228,7 @@ const extractJson = (text: string): string => {
       }
     }
   }
-  
+
   return text.substring(start, end);
 };
 
@@ -238,46 +238,46 @@ const extractJson = (text: string): string => {
  */
 export const safeJsonParse = <T = unknown>(value: string): T | null => {
   const stripped = stripJsonFence(value);
-  
+
   // Try parsing strategies in order of preference
   const strategies = [
     // 1. Direct parse (best case)
     () => JSON.parse(stripped),
-    
+
     // 2. Extract JSON from response (in case there's extra text)
     () => JSON.parse(extractJson(stripped)),
-    
+
     // 3. Fix LaTeX escaping only
     () => JSON.parse(fixLatexEscaping(stripped)),
-    
+
     // 4. Fix unescaped characters only
     () => JSON.parse(fixUnescapedChars(stripped)),
-    
+
     // 5. Fix common JSON issues only
     () => JSON.parse(fixCommonJsonIssues(stripped)),
-    
+
     // 6. Fix LaTeX + unescaped chars
     () => JSON.parse(fixUnescapedChars(fixLatexEscaping(stripped))),
-    
+
     // 7. Fix LaTeX + common issues
     () => JSON.parse(fixCommonJsonIssues(fixLatexEscaping(stripped))),
-    
+
     // 8. Fix unescaped + common issues
     () => JSON.parse(fixCommonJsonIssues(fixUnescapedChars(stripped))),
-    
+
     // 9. Extract + fix LaTeX
     () => JSON.parse(fixLatexEscaping(extractJson(stripped))),
-    
+
     // 10. Extract + fix unescaped
     () => JSON.parse(fixUnescapedChars(extractJson(stripped))),
-    
+
     // 11. Extract + fix common issues
     () => JSON.parse(fixCommonJsonIssues(extractJson(stripped))),
-    
+
     // 12. All fixes combined
     () => JSON.parse(fixCommonJsonIssues(fixUnescapedChars(fixLatexEscaping(extractJson(stripped))))),
   ];
-  
+
   for (let i = 0; i < strategies.length; i++) {
     try {
       const result = strategies[i]();
@@ -296,7 +296,7 @@ export const safeJsonParse = <T = unknown>(value: string): T | null => {
       }
     }
   }
-  
+
   return null;
 };
 
@@ -304,7 +304,7 @@ export const safeJsonParse = <T = unknown>(value: string): T | null => {
  * Check if Gemini API key is configured
  */
 export const hasGeminiApiKey = (): boolean => {
-  return !!GEMINI_API_KEY;
+  return !!getGeminiApiKey();
 };
 
 /**
@@ -316,52 +316,89 @@ export const hasGeminiApiKey = (): boolean => {
  * @returns Raw text response from Gemini
  */
 export const callGemini = async (
-  prompt: string, 
+  prompt: string,
   model?: string,
   useStructuredOutput: boolean = false,
   responseSchema?: object
 ): Promise<string | null> => {
-  if (!GEMINI_API_KEY) {
-    console.error("Gemini API key not configured");
+  const apiKey = getGeminiApiKey();
+  if (!apiKey && process.env.USE_OLLAMA !== "true" && !process.env.OLLAMA_URL) {
+    console.error("Gemini API key or Ollama not configured");
     return null;
   }
 
   try {
-    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    const modelName = model || DEFAULT_MODEL;
-    
+    const modelName = model || getDefaultModel();
+
+    // 1. Ollama Support
+    if (process.env.USE_OLLAMA === "true" || process.env.OLLAMA_URL) {
+      console.log("🤖 Using local Ollama model...");
+      try {
+        const ollamaModel = process.env.OLLAMA_MODEL || (modelName.includes("llama") ? modelName : "llama3");
+        const payload: any = {
+          model: ollamaModel,
+          prompt: prompt,
+          stream: false,
+          options: { temperature: 0.7 }
+        };
+
+        if (useStructuredOutput) {
+          payload.format = "json";
+        }
+
+        const response = await fetch(process.env.OLLAMA_URL || "http://localhost:11434/api/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          throw new Error(`Ollama returned status ${response.status}`);
+        }
+        const data = await response.json() as any;
+        return data.response;
+      } catch (err: any) {
+        console.error("Ollama fallback failed:", err?.message);
+        throw err;
+      }
+    }
+
+    // 4. Defaults to Gemini
+    console.log("✨ Using Gemini API...");
+    const genAI = new GoogleGenerativeAI(apiKey || "");
+
     // Configure generation config
     const generationConfig: any = {
       temperature: 0.7,
     };
-    
+
     // Add structured output if requested and schema provided
     if (useStructuredOutput && responseSchema) {
       generationConfig.responseMimeType = 'application/json';
       generationConfig.responseSchema = responseSchema;
       console.log("Using structured JSON output mode");
     }
-    
-    const geminiModel = genAI.getGenerativeModel({ 
+
+    const geminiModel = genAI.getGenerativeModel({
       model: modelName,
       generationConfig
     });
-    
+
     const result = await geminiModel.generateContent(prompt);
     const response = result.response;
     const text = response.text();
-    
+
     if (!text) {
       console.warn("Gemini API returned empty response");
       return null;
     }
-    
+
     // Check for truncation indicators
     const finishReason = (response as any).candidates?.[0]?.finishReason;
     if (finishReason === 'MAX_TOKENS' || finishReason === 'LENGTH') {
       console.warn("⚠️  Response may be truncated (finishReason: " + finishReason + ")");
     }
-    
+
     return text;
   } catch (err: any) {
     // Log detailed error information
@@ -383,7 +420,7 @@ const enhancePromptForJson = (originalPrompt: string, attempt: number): string =
   if (attempt === 0) {
     return originalPrompt;
   }
-  
+
   // On retry, add more explicit JSON instructions
   const jsonInstructions = `
 
@@ -414,29 +451,29 @@ Output ONLY the JSON object, nothing else.`;
  * @returns Parsed JSON object of type T, or null if parsing fails
  */
 export const callGeminiJson = async <T = unknown>(
-  prompt: string, 
+  prompt: string,
   model?: string,
   retries: number = 2
 ): Promise<T | null> => {
   let lastError: Error | null = null;
   let lastResponse: string | null = null;
-  
+
   for (let attempt = 0; attempt <= retries; attempt++) {
     if (attempt > 0) {
       console.log(`Retrying Gemini JSON call (attempt ${attempt + 1}/${retries + 1})...`);
       // Enhance prompt on retry with more explicit instructions
       prompt = enhancePromptForJson(prompt, attempt);
     }
-    
+
     try {
       const text = await callGemini(prompt, model);
       if (!text) {
         lastError = new Error("Empty response from Gemini");
         continue;
       }
-      
+
       lastResponse = text;
-      
+
       // Check if response seems truncated (ends abruptly)
       const trimmed = text.trim();
       if (trimmed.length > 0 && !trimmed.endsWith('}') && !trimmed.endsWith(']')) {
@@ -456,7 +493,7 @@ export const callGeminiJson = async <T = unknown>(
           }
         }
       }
-      
+
       const parsed = safeJsonParse<T>(text);
       if (parsed !== null) {
         if (attempt > 0) {
@@ -464,9 +501,9 @@ export const callGeminiJson = async <T = unknown>(
         }
         return parsed;
       }
-      
+
       lastError = new Error("Failed to parse JSON response");
-      
+
       // If we have a response but parsing failed, log more details
       if (lastResponse) {
         const responseLength = lastResponse.length;
@@ -475,7 +512,7 @@ export const callGeminiJson = async <T = unknown>(
           console.warn("⚠️  Very large response - may have been truncated by API");
         }
       }
-      
+
     } catch (apiError) {
       console.error(`Gemini API error on attempt ${attempt + 1}:`, apiError);
       lastError = apiError instanceof Error ? apiError : new Error(String(apiError));
@@ -487,7 +524,7 @@ export const callGeminiJson = async <T = unknown>(
       }
     }
   }
-  
+
   console.error(`All ${retries + 1} attempts to get valid JSON failed. Last error:`, lastError?.message);
   if (lastResponse) {
     // Save problematic response to a file for debugging (optional)

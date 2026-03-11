@@ -723,4 +723,70 @@ adminRouter.post("/generate-image", async (req, res) => {
   }
 });
 
+/**
+ * POST /api/admin/generate-roadmap
+ * Generate a learning roadmap using Gemini
+ * 
+ * Body:
+ * {
+ *   profile: string,
+ *   goal: string
+ * }
+ */
+adminRouter.post("/generate-roadmap", async (req, res) => {
+  try {
+    const { profile, goal } = req.body;
+
+    if (!profile || !goal) {
+      return res.status(400).json({ error: "profile and goal are required" });
+    }
+
+    const { callGemini } = await import("../utils/gemini.js");
+
+    const prompt = `You are an expert curriculum designer. 
+Create a detailed Learning Roadmap for a student.
+Student Profile: ${profile}
+Learning Goal: ${goal}
+
+You MUST respond with ONLY a raw JSON array of roadmap steps. Do not include markdown formatting (like \`\`\`json).
+Format:
+[
+  { "title": "Phase 1: Basics", "description": "Learn the fundamentals of X and Y.", "status": "pending" },
+  { "title": "Phase 2: Intermediate", "description": "Build projects using Z.", "status": "pending" }
+]`;
+
+    const rawContent = await callGemini(prompt);
+
+    if (!rawContent) {
+      return res.status(500).json({ error: "Failed to generate roadmap from AI" });
+    }
+
+    // Clean up potentially wrapped JSON
+    let cleanedContent = rawContent.trim();
+    if (cleanedContent.startsWith('\`\`\`json')) {
+      cleanedContent = cleanedContent.replace(/^\`\`\`json/, '').replace(/\`\`\`$/, '').trim();
+    } else if (cleanedContent.startsWith('\`\`\`')) {
+      cleanedContent = cleanedContent.replace(/^\`\`\`/, '').replace(/\`\`\`$/, '').trim();
+    }
+
+    let parsedRoadmap;
+    try {
+      parsedRoadmap = JSON.parse(cleanedContent);
+    } catch (e) {
+      console.warn("Failed to parse JSON, returning raw text", e);
+      parsedRoadmap = [{ title: "Generated Roadmap", description: cleanedContent, status: "pending" }];
+    }
+
+    res.json({
+      success: true,
+      roadmap: parsedRoadmap
+    });
+  } catch (error) {
+    console.error("Error generating roadmap:", error);
+    res.status(500).json({
+      error: error instanceof Error ? error.message : "Failed to generate roadmap"
+    });
+  }
+});
+
 export default adminRouter;

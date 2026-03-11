@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "recent_history" jsonb DEFAULT '[]'::jsonb NOT NULL;

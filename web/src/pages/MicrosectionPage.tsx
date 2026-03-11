@@ -176,7 +176,6 @@ const VideoViewer: React.FC<{
     }
     return url;
   };
-  console.log('Video content:', content);
 
   if (!content.url && story?.status === 'ready') {
     return (
@@ -752,57 +751,40 @@ export function MicrosectionPage() {
     }
   };
 
-  const preloadStory = async () => {
-    if (!classId || !subjectId || !chapterSlug || !sectionSlug) return;
+
+  const fetchStoryAudio = async (storyData?: StoryAsset, force = false) => {
+    const targetStory = storyData || story;
+    if (!targetStory) return;
+    setIsAudioLoading(true);
     try {
-      const response = await fetch(
-        `http://localhost:8000/api/story/${classId}/${subjectId}/${chapterSlug}/${sectionSlug}`
-      );
+      const response = await fetch('http://localhost:8000/api/story/audio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          classId,
+          subjectId,
+          chapterSlug,
+          sectionSlug,
+          locale: language,
+          force
+        })
+      });
+
       if (!response.ok) {
-        return;
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate audio');
       }
-      const storyData: StoryAsset = await response.json();
-      if (storyData.status === 'ready') {
-        setStory(storyData);
-      }
+
+      const audioData: { audio: StoryAudioAsset } = await response.json();
+      setStoryAudio(audioData.audio);
     } catch (err) {
-      console.warn('Story preload failed', err);
+      setStoryError(err instanceof Error ? err.message : 'Failed to generate audio');
+    } finally {
+      setIsAudioLoading(false);
     }
   };
 
   useEffect(() => {
-    const fetchStoryAudio = async (storyData?: StoryAsset, force = false) => {
-      const targetStory = storyData || story;
-      if (!targetStory) return;
-      setIsAudioLoading(true);
-      try {
-        const response = await fetch('http://localhost:8000/api/story/audio', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            classId,
-            subjectId,
-            chapterSlug,
-            sectionSlug,
-            locale: language,
-            force
-          })
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to generate audio');
-        }
-
-        const audioData: { audio: StoryAudioAsset } = await response.json();
-        setStoryAudio(audioData.audio);
-      } catch (err) {
-        setStoryError(err instanceof Error ? err.message : 'Failed to generate audio');
-      } finally {
-        setIsAudioLoading(false);
-      }
-    };
-
     if (story && language) {
       fetchStoryAudio(story);
     }

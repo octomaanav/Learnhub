@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { callGemini } from "./gemini.js";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
@@ -7,59 +7,48 @@ if (!GEMINI_API_KEY) {
 }
 
 /**
- * Generate an image using Gemini's Imagen model
+ * Generate an image using Gemini to create an SVG diagram
  * @param prompt The description/prompt for the image
  * @param numberOfImages Number of images to generate (1-4, default: 1)
- * @returns Array of base64-encoded image data
+ * @returns Array of base64-encoded SVG data
  */
 export const generateImage = async (
   prompt: string,
   numberOfImages: number = 1
 ): Promise<string[]> => {
-  if (!GEMINI_API_KEY) {
-    throw new Error("GEMINI_API_KEY is not configured");
-  }
-
   if (!prompt || prompt.trim().length === 0) {
     throw new Error("Prompt is required");
   }
 
-  if (numberOfImages < 1 || numberOfImages > 4) {
-    throw new Error("numberOfImages must be between 1 and 4");
-  }
-
   try {
-    const ai = new GoogleGenAI({
-      apiKey: GEMINI_API_KEY,
-    });
+    const aiPrompt = `You are an expert educational graphic designer. Create a clean, beautiful, scalable vector graphic (SVG) diagram that represents the following concept. 
+The canvas size should be exactly 800x600.
+Use modern typography, attractive colors, and clear shapes.
+Include text labels where appropriate.
+Return ONLY valid SVG code. No markdown fences, no explanations, just the raw SVG XML code starting with <svg> and ending with </svg>.
 
-    console.log(`Generating ${numberOfImages} image(s) with prompt: "${prompt.substring(0, 100)}..."`);
+Concept: ${prompt}`;
 
-    const response = await ai.models.generateImages({
-      model: 'imagen-4.0-generate-001',
-      prompt: prompt,
-      config: {
-        numberOfImages: numberOfImages,
-      },
-    });
+    console.log(`Generating diagram with Gemini: "${prompt.substring(0, 100)}..."`);
+    const svgCode = await callGemini(aiPrompt);
 
-    if (!response.generatedImages || response.generatedImages.length === 0) {
-      throw new Error("No images were generated");
+    if (!svgCode || !svgCode.includes("<svg") || !svgCode.includes("</svg>")) {
+      throw new Error("Gemini failed to generate valid SVG code");
     }
 
-    const imageData: string[] = [];
-    for (const generatedImage of response.generatedImages) {
-      if (generatedImage.image?.imageBytes) {
-        imageData.push(generatedImage.image.imageBytes);
-      }
+    // Extract just the SVG part (in case it added markdown despite instructions)
+    const svgMatch = svgCode.match(/<svg[\s\S]*?<\/svg>/i);
+    if (!svgMatch) {
+      throw new Error("Could not extract SVG from Gemini response");
     }
 
-    if (imageData.length === 0) {
-      throw new Error("Generated images but no image bytes found");
-    }
+    const cleanSvg = svgMatch[0];
 
-    console.log(`✓ Successfully generated ${imageData.length} image(s)`);
-    return imageData;
+    // Convert to base64
+    const base64Svg = Buffer.from(cleanSvg, 'utf-8').toString('base64');
+
+    // Return an array of size `numberOfImages` to maintain the API shape
+    return Array(numberOfImages).fill(base64Svg);
   } catch (error) {
     console.error("Error generating image:", error);
     if (error instanceof Error) {
@@ -70,9 +59,9 @@ export const generateImage = async (
 };
 
 /**
- * Generate a single image and return it as base64 data URL
+ * Generate a single SVG and return it as base64 data URL
  * @param prompt The description/prompt for the image
- * @returns Base64 data URL (data:image/png;base64,...)
+ * @returns Base64 data URL (data:image/svg+xml;base64,...)
  */
 export const generateImageAsDataUrl = async (
   prompt: string
@@ -81,5 +70,6 @@ export const generateImageAsDataUrl = async (
   if (images.length === 0) {
     throw new Error("No image was generated");
   }
-  return `data:image/png;base64,${images[0]}`;
+  return `data:image/svg+xml;base64,${images[0]}`;
 };
+

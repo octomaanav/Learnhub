@@ -132,13 +132,14 @@ ${JSON.stringify(canonical.payloadJson)}
     const images = await generateImage(slide.prompt);
     if (!images || images.length === 0) return;
     const imageData = images[0]; // This is a base64 string
-    const key = `generated/${contentKey}/${version}/${locale}/story/slide_${slideIndex}.png`;
+    const key = `generated/${contentKey}/${version}/${locale}/story/slide_${slideIndex}.svg`;
     const saved = await saveBufferFile(Buffer.from(imageData, "base64"), key);
     await db
       .update(storySlides)
       .set({
         imagePath: saved.publicUrl,
-        imageMime: "image/png", // generateImage returns PNGs
+        imageMime: "image/svg+xml", // generateImage returns SVGs now
+
         imageHash: sha256Text(imageData),
         updatedAt: new Date(),
       })

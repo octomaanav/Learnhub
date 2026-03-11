@@ -8,7 +8,6 @@ if (typeof window !== 'undefined') {
   window.fetch = async (input, init) => {
     const method = init?.method || 'GET';
     const url = typeof input === 'string' ? input : (input as any).url;
-    console.log('[fetch]', method, url, init?.body ? { body: init.body } : '');
     const response = await originalFetch(input, init);
     try {
       const cloned = response.clone();

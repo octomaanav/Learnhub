@@ -304,7 +304,7 @@ storyRouter.post("/generate", async (req, res) => {
       const safePrompt = `${SAFE_IMAGE_PREFIX}. ${imagePrompt}`;
 
       const [imageBytes] = await generateImage(safePrompt, 1);
-      const fileName = `slide-${String(slideIndex).padStart(2, "0")}.png`;
+      const fileName = `slide-${String(slideIndex).padStart(2, "0")}.svg`;
 
       const saved = await saveBase64File(imageBytes, path.join(storyDir, fileName));
 
@@ -496,6 +496,34 @@ storyRouter.post("/audio", async (req, res) => {
         .where(eq(storyAudioAssets.id, audioRecord.id));
     }
     return res.status(500).json({ error: "Failed to generate story audio" });
+  }
+});
+storyRouter.get("/diagram", async (req, res) => {
+  try {
+    const prompt = req.query.q as string;
+    if (!prompt) {
+      return res.status(400).send("Missing query parameter 'q'");
+    }
+
+    // Check if we have gemini api key
+    if (!hasGeminiApiKey()) {
+      return res.status(500).send("Gemini API key is not configured");
+    }
+
+    const images = await generateImage(prompt, 1);
+
+    if (!images || images.length === 0) {
+      return res.status(500).send("Failed to generate diagram");
+    }
+
+    const svgBuffer = Buffer.from(images[0], 'base64');
+
+    res.set('Content-Type', 'image/svg+xml');
+    res.set('Cache-Control', 'public, max-age=31536000'); // cache in browser
+    return res.send(svgBuffer);
+  } catch (error) {
+    console.error("Error generating diagram:", error);
+    return res.status(500).send("Failed to generate diagram");
   }
 });
 

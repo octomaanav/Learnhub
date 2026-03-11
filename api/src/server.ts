@@ -18,6 +18,7 @@ import uploadRouter from "./routes/upload.js";
 import storyRouter from "./routes/story.js";
 import { storageConfig } from "./utils/storage.js";
 import { startWorkerLoop } from "./worker/index.js";
+import { startScheduler } from "./scheduler/index.js";
 import contentRouter from "./routes/content.js";
 import storyV2Router from "./routes/story_v2.js";
 import brailleV2Router from "./routes/braille_v2.js";
@@ -127,6 +128,8 @@ app.use("/api/webhooks", webhooksRouter);
 startWorkerLoop().catch((err) => {
   console.error("[worker] failed to start", err);
 });
+
+startScheduler();
 
 async function startServer() {
   const PORT = process.env.PORT || 8000;
