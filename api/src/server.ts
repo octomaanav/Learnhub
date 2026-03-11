@@ -54,6 +54,7 @@ const allowedOrigins = [
   process.env.FRONTEND_URL || "http://localhost:5173",
   "http://localhost:5173",
   "https://gemini-hack-puce.vercel.app",
+  "https://learnhub-gemini.vercel.app",
 ].map(url => url.replace(/\/$/, '')); // Normalize by removing trailing slashes
 
 app.use(
