@@ -2,9 +2,10 @@ import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useVoiceAgent } from '../components/VoiceAgentProvider';
 
-const DOT_COUNT = 28;
+const BAR_COUNT = 7;
+const BAR_HEIGHTS = [32, 22, 58, 48, 68, 26, 52];
 
-function DNACanvas() {
+function VoiceNoteBars() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const frameRef = useRef(0);
 
@@ -15,72 +16,66 @@ function DNACanvas() {
     let animId: number;
     const dpr = window.devicePixelRatio || 1;
 
-    const W = 320;
-    const H = 60;
+    const W = 170;
+    const H = 90;
     canvas.width = W * dpr;
     canvas.height = H * dpr;
     canvas.style.width = `${W}px`;
     canvas.style.height = `${H}px`;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
+    const drawRoundedRect = (x: number, y: number, w: number, h: number, r: number) => {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    };
+
     const draw = () => {
-      const t = frameRef.current * 0.025;
+      const t = frameRef.current * 0.04;
       frameRef.current++;
       ctx.clearRect(0, 0, W, H);
 
-      const cy = H / 2;
-      const amp = 14;
-      const pts1: { x: number; y: number; z: number }[] = [];
-      const pts2: { x: number; y: number; z: number }[] = [];
+      const barWidth = 15;
+      const gap = 7;
+      const totalWidth = BAR_COUNT * barWidth + (BAR_COUNT - 1) * gap;
+      const startX = (W - totalWidth) / 2;
+      const baseY = H - 10;
 
-      for (let i = 0; i < DOT_COUNT; i++) {
-        const frac = i / (DOT_COUNT - 1);
-        const x = 16 + frac * (W - 32);
-        const twist = frac * Math.PI * 4 + t;
-        const y1 = cy + Math.sin(twist) * amp;
-        const z1 = Math.cos(twist);
-        const y2 = cy + Math.sin(twist + Math.PI) * amp;
-        const z2 = Math.cos(twist + Math.PI);
-        pts1.push({ x, y: y1, z: z1 });
-        pts2.push({ x, y: y2, z: z2 });
+      for (let i = 0; i < BAR_COUNT; i++) {
+        const baseHeight = BAR_HEIGHTS[i];
+        const animOffset = Math.sin(t + i * 0.7) * 8 + Math.sin(t * 1.3 + i * 0.5) * 4;
+        const height = Math.max(15, baseHeight + animOffset);
+        
+        const x = startX + i * (barWidth + gap);
+        const y = baseY - height;
+        const radius = barWidth / 2;
+
+        // Create gradient from yellow (top) to blue (bottom)
+        const gradient = ctx.createLinearGradient(x, y, x, baseY);
+        gradient.addColorStop(0, '#f5c842');
+        gradient.addColorStop(0.4, '#e8d47a');
+        gradient.addColorStop(0.7, '#9dd4e0');
+        gradient.addColorStop(1, '#5cb8e8');
+
+        // Draw shadow/glow
+        ctx.save();
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = 'rgba(92, 184, 232, 0.25)';
+        ctx.shadowOffsetY = 4;
+        
+        drawRoundedRect(x, y, barWidth, height, radius);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        ctx.restore();
       }
-
-      // Rungs
-      for (let i = 0; i < DOT_COUNT; i += 2) {
-        const midZ = (pts1[i].z + pts2[i].z) / 2;
-        const a = 0.06 + 0.1 * ((midZ + 1) / 2);
-        ctx.beginPath();
-        ctx.moveTo(pts1[i].x, pts1[i].y);
-        ctx.lineTo(pts2[i].x, pts2[i].y);
-        ctx.strokeStyle = `hsla(260, 70%, 70%, ${a})`;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-      }
-
-      // Strand helper
-      const drawStrand = (pts: typeof pts1, hue: number) => {
-        ctx.beginPath();
-        for (let i = 0; i < pts.length; i++) {
-          if (i === 0) ctx.moveTo(pts[i].x, pts[i].y);
-          else ctx.lineTo(pts[i].x, pts[i].y);
-        }
-        ctx.strokeStyle = `hsla(${hue}, 85%, 65%, 0.6)`;
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-
-        for (const p of pts) {
-          const df = (p.z + 1) / 2;
-          const r = 1 + df * 1.5;
-          const a = 0.25 + df * 0.5;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-          ctx.fillStyle = `hsla(${hue}, 100%, 80%, ${a})`;
-          ctx.fill();
-        }
-      };
-
-      drawStrand(pts1, 220);
-      drawStrand(pts2, 290);
 
       animId = requestAnimationFrame(draw);
     };
@@ -108,25 +103,25 @@ const CallPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-slate-950 text-slate-50 flex flex-col items-center justify-center px-4 select-none">
-      {/* Horizontal DNA strand */}
-      <div className="relative mb-6">
-        <div className="absolute inset-[-20px] bg-gradient-to-r from-blue-600/10 via-purple-500/10 to-cyan-400/10 blur-2xl rounded-full" />
-        <DNACanvas />
+    <div className="min-h-screen w-full bg-slate-50 text-slate-900 flex flex-col items-center justify-center px-4 select-none">
+      {/* Voice Note Bars Animation */}
+      <div className="relative mb-8">
+        <div className="absolute inset-[-30px] bg-gradient-to-b from-amber-500/10 via-transparent to-cyan-500/15 blur-2xl rounded-full" />
+        <VoiceNoteBars />
       </div>
 
-      <h1 className="text-xl font-semibold tracking-tight mb-1">
+      <h1 className="text-3xl font-bold tracking-tight mb-2">
         LearnHub Tutor
       </h1>
-      <p className="text-slate-400 text-sm mb-8">
+      <p className="text-slate-500 text-lg mb-10">
         Call in progress — speak anytime
       </p>
 
       <button
         onClick={handleEnd}
-        className="group flex items-center gap-2 px-6 py-3 rounded-full bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 hover:border-red-500/50 text-red-400 hover:text-red-300 text-sm font-medium transition-all duration-200"
+        className="group flex items-center gap-2 px-6 py-3 rounded-full bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 hover:border-red-500/50 text-red-500 hover:text-red-600 text-base font-medium transition-all duration-200"
       >
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91" />
           <line x1="1" y1="1" x2="23" y2="23" />
         </svg>
