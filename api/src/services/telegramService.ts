@@ -7,7 +7,8 @@ import { callGemini } from '../utils/gemini.js';
 
 // Initialize telegram bot if token is provided
 const token = process.env.TELEGRAM_BOT_TOKEN || '';
-export const telegramBot = token ? new TelegramBot(token, { polling: true }) : null;
+const shouldPoll = process.env.TELEGRAM_POLLING !== 'false';
+export const telegramBot = token ? new TelegramBot(token, { polling: shouldPoll }) : null;
 
 if (telegramBot) {
     console.log('[Telegram] Bot initialized');

@@ -754,6 +754,7 @@ lessonsRouter.get("/structured/:classId/:subjectId", async (req, res) => {
         chapterDescription: chapter.description,
         sections: lessonsList.map(lesson => ({
           id: lesson.slug,
+          lessonId: lesson.id, // Actual UUID for tracking
           slug: lesson.slug,
           title: lesson.title,
           description: (typeof lesson.content === 'object' && 'description' in lesson.content && typeof lesson.content.description === 'string')
@@ -853,6 +854,7 @@ lessonsRouter.get("/structured/:classId/:subjectId/:chapterSlug", async (req, re
       chapterDescription: chapter.description,
       sections: lessonsList.map(lesson => ({
         id: lesson.slug,
+        lessonId: lesson.id, // Actual UUID for tracking
         slug: lesson.slug,
         title: lesson.title,
         description: (typeof lesson.content === 'object' && 'description' in lesson.content && typeof lesson.content.description === 'string')
@@ -963,6 +965,7 @@ lessonsRouter.get("/structured/:classId/:subjectId/:chapterSlug/:sectionSlug/:mi
       },
       section: {
         id: section.slug,
+        lessonId: section.id, // Actual UUID for tracking
         slug: section.slug,
         title: section.title,
       },
@@ -996,19 +999,72 @@ lessonsRouter.get("/knowledge-base/search", async (req, res) => {
       return res.status(400).json({ error: "Query parameter 'q' is required" });
     }
 
-    // Very simple search just looking for partial matches in the title or content
-    // In a real app we would use full-text search or vector similarity
-    const results = await db.select({
+    // Extract meaningful keywords from the query (remove noise like "Chapter 4:", "Introduction", etc.)
+    const keywords = query
+      .replace(/chapter\s*\d+\s*[:.-]?\s*/gi, '') // Remove "Chapter 4:" prefix
+      .split(/[\s\-:,]+/)
+      .filter(w => w.length > 2) // Skip short words like "in", "a", "of"
+      .map(w => w.toLowerCase());
+
+    // First: try exact lesson title match
+    let results = await db.select({
       id: lessonsTable.id,
       title: lessonsTable.title,
       slug: lessonsTable.slug,
       content: lessonsTable.content,
+      chapterName: chapters.name,
     })
       .from(lessonsTable)
+      .innerJoin(chapters, eq(chapters.id, lessonsTable.chapterId))
       .where(
         sql`LOWER(${lessonsTable.title}) LIKE LOWER(${`%${query}%`})`
       )
       .limit(3);
+
+    // Second: if no exact match, search by chapter name + keyword combo
+    if (results.length === 0 && keywords.length > 0) {
+      // Build OR conditions for each keyword matching either chapter or lesson title
+      const keywordConditions = keywords.map(kw =>
+        sql`(LOWER(${chapters.name}) LIKE ${`%${kw}%`} OR LOWER(${lessonsTable.title}) LIKE ${`%${kw}%`})`
+      );
+
+      results = await db.select({
+        id: lessonsTable.id,
+        title: lessonsTable.title,
+        slug: lessonsTable.slug,
+        content: lessonsTable.content,
+        chapterName: chapters.name,
+      })
+        .from(lessonsTable)
+        .innerJoin(chapters, eq(chapters.id, lessonsTable.chapterId))
+        .where(sql.join(keywordConditions, sql` AND `))
+        .orderBy(lessonsTable.sortOrder)
+        .limit(5);
+    }
+
+    // Third: if still nothing, try matching just the chapter name and return first lessons
+    if (results.length === 0 && keywords.length > 0) {
+      const chapterKeywords = keywords.filter(kw =>
+        !['introduction', 'summary', 'overview'].includes(kw)
+      );
+      if (chapterKeywords.length > 0) {
+        const chapterConditions = chapterKeywords.map(kw =>
+          sql`LOWER(${chapters.name}) LIKE ${`%${kw}%`}`
+        );
+        results = await db.select({
+          id: lessonsTable.id,
+          title: lessonsTable.title,
+          slug: lessonsTable.slug,
+          content: lessonsTable.content,
+          chapterName: chapters.name,
+        })
+          .from(lessonsTable)
+          .innerJoin(chapters, eq(chapters.id, lessonsTable.chapterId))
+          .where(sql.join(chapterConditions, sql` AND `))
+          .orderBy(lessonsTable.sortOrder)
+          .limit(5);
+      }
+    }
 
     res.json({ results });
   } catch (error) {

@@ -150,5 +150,26 @@ export const toolDeclarations: FunctionDeclaration[] = [
       },
       required: ["description", "type"]
     }
+  },
+  {
+    name: "planLesson",
+    description: "Structure a lesson session by defining a series of learning objectives or steps. This gives the user a roadmap of what you will teach in Pulse mode.",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        topic: {
+          type: Type.STRING,
+          description: "The main topic of the plan"
+        },
+        steps: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.STRING
+          },
+          description: "A list of 3-5 sub-topics or steps you will cover in this session"
+        }
+      },
+      required: ["topic", "steps"]
+    }
   }
 ];

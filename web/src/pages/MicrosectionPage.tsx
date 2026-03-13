@@ -16,6 +16,7 @@ import type {
   StoryAsset,
   StoryAudioAsset
 } from '../types';
+import { TranslationKey } from '../components/i18n/translations';
 
 // Helper to format text: bold **text** and convert newlines to <br/>
 function formatText(text: string): string {
@@ -67,12 +68,12 @@ import { useLanguage } from '../components/i18n/LanguageProvider';
 import { useI18n } from '../components/i18n/useI18n';
 
 // Article Viewer Component
-const ArticleViewer: React.FC<{ content: ArticleContent; t: (key: string) => string }> = ({ content, t }) => {
+const ArticleViewer: React.FC<{ content: ArticleContent; t: (key: TranslationKey) => string }> = ({ content, t }) => {
   return (
-    <div className="prose prose-slate max-w-none">
+    <div className="prose prose-slate dark:prose-invert max-w-none">
       {/* Introduction */}
       {content.introduction && (
-        <div className="text-lg text-slate-600 mb-8 leading-relaxed">
+        <div className="text-lg text-surface-600 dark:text-surface-400 mb-8 leading-relaxed font-bold">
           <MathText text={formatText(content.introduction)} />
         </div>
       )}
@@ -80,27 +81,27 @@ const ArticleViewer: React.FC<{ content: ArticleContent; t: (key: string) => str
       {/* Core Concepts */}
       {content.coreConcepts.map((concept, i) => (
         <div key={i} className="mb-10">
-          <h2 className="text-2xl font-bold text-slate-900 mb-4">{concept.conceptTitle}</h2>
-          <div className="text-slate-700 mb-4 leading-relaxed">
+          <h2 className="text-2xl font-black text-surface-900 mb-4 tracking-tight uppercase">{concept.conceptTitle}</h2>
+          <div className="text-surface-700 dark:text-surface-300 mb-4 leading-relaxed font-bold">
             <MathText text={formatText(concept.explanation)} />
           </div>
           {concept.example && (
-            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg mb-4">
-              <p className="font-semibold text-blue-800 mb-1">{t('micro.example')}</p>
-              <div className="text-blue-900">
+            <div className="bg-primary-50 dark:bg-primary-900/10 border-l-4 border-primary-500 p-6 rounded-r-3xl mb-6 shadow-sm">
+              <p className="font-black text-primary-600 dark:text-primary-400 mb-2 uppercase text-xs tracking-widest">{t('micro.example')}</p>
+              <div className="text-primary-900 dark:text-primary-100 font-bold leading-relaxed">
                 <MathText text={formatText(concept.example)} />
               </div>
             </div>
           )}
           {concept.diagramImageUrl && (
-            <div className="my-4 rounded-xl overflow-hidden border border-slate-200">
+            <div className="my-6 rounded-[2rem] overflow-hidden border border-surface-200 shadow-xl bg-surface-100">
               <img
                 src={concept.diagramImageUrl}
                 alt={concept.diagramDescription || `Diagram for ${concept.conceptTitle}`}
-                className="w-full max-w-lg"
+                className="w-full max-w-lg mx-auto"
               />
               {concept.diagramDescription && (
-                <p className="text-sm text-slate-500 p-3 bg-slate-50">{concept.diagramDescription}</p>
+                <p className="text-xs font-bold text-surface-500 p-4 bg-surface-200/50 uppercase tracking-wider">{concept.diagramDescription}</p>
               )}
             </div>
           )}
@@ -109,13 +110,15 @@ const ArticleViewer: React.FC<{ content: ArticleContent; t: (key: string) => str
 
       {/* Summary */}
       {content.summary.length > 0 && (
-        <div className="bg-slate-100 rounded-xl p-6 mb-8">
-          <h3 className="text-lg font-bold text-slate-900 mb-3">{t('micro.keyTakeaways')}</h3>
-          <ul className="space-y-2">
+        <div className="bg-surface-100 dark:bg-surface-800/50 border border-surface-200 rounded-[2.5rem] p-8 mb-8 shadow-inner">
+          <h3 className="text-lg font-black text-surface-900 mb-4 uppercase tracking-widest">{t('micro.keyTakeaways')}</h3>
+          <ul className="space-y-3">
             {content.summary.map((point, i) => (
-              <li key={i} className="flex items-start gap-2">
-                <span className="text-green-500 mt-1">✓</span>
-                <span className="text-slate-700"><MathText text={formatText(point)} /></span>
+              <li key={i} className="flex items-start gap-3">
+                <div className="w-5 h-5 bg-primary-500 rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-lg shadow-primary-500/20">
+                  <span className="text-white text-[10px] font-black">✓</span>
+                </div>
+                <span className="text-surface-700 dark:text-surface-300 font-bold"><MathText text={formatText(point)} /></span>
               </li>
             ))}
           </ul>
@@ -124,23 +127,23 @@ const ArticleViewer: React.FC<{ content: ArticleContent; t: (key: string) => str
 
       {/* Quick Check Questions */}
       {content.quickCheckQuestions.length > 0 && (
-        <div className="border border-slate-200 rounded-xl p-6">
-          <h3 className="text-lg font-bold text-slate-900 mb-4">{t('micro.quickCheck')}</h3>
+        <div className="border border-surface-200 bg-surface-50 dark:bg-surface-100/30 rounded-[2.5rem] p-8 shadow-sm">
+          <h3 className="text-lg font-black text-surface-900 mb-6 uppercase tracking-widest">{t('micro.quickCheck')}</h3>
           <div className="space-y-4">
             {content.quickCheckQuestions.map((q, i) => (
-              <details key={i} className="group">
+              <details key={i} className="group list-none">
                 <summary className="cursor-pointer list-none">
-                  <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50">
-                    <span className="bg-slate-200 text-slate-600 w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium">
+                  <div className="flex items-start gap-4 p-4 rounded-2xl hover:bg-surface-200/50 transition-all border border-transparent hover:border-surface-200">
+                    <span className="bg-surface-200 text-surface-600 w-8 h-8 rounded-xl flex items-center justify-center text-sm font-black shrink-0 shadow-inner">
                       {i + 1}
                     </span>
-                    <span className="flex-1 font-medium text-slate-800">
+                    <span className="flex-1 font-bold text-surface-800 dark:text-surface-200 mt-1">
                       <MathText text={formatText(q.question)} />
                     </span>
-                    <span className="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+                    <span className="text-surface-400 group-open:rotate-180 transition-transform mt-1">▼</span>
                   </div>
                 </summary>
-                <div className="ml-9 pl-3 border-l-2 border-green-300 py-2 text-green-800">
+                <div className="ml-12 pl-6 border-l-2 border-primary-500/30 py-3 text-primary-600 dark:text-primary-400 font-bold italic animate-in slide-in-from-top-2 duration-300">
                   <MathText text={formatText(q.answer)} />
                 </div>
               </details>
@@ -161,7 +164,7 @@ const VideoViewer: React.FC<{
   audioSlides?: StoryAudioAsset['slides'];
   onRegenerateAudio?: () => void;
   isAudioLoading?: boolean;
-  t: (key: string) => string;
+  t: (key: TranslationKey) => string;
 }> = ({ content, story, onGenerateStory, isStoryLoading, audioSlides, onRegenerateAudio, isAudioLoading, t }) => {
   const getEmbedUrl = (url: string) => {
     if (url.includes('youtube.com') || url.includes('youtu.be')) {
@@ -190,8 +193,8 @@ const VideoViewer: React.FC<{
   }
 
   return (
-    <div>
-      <div className="aspect-video bg-slate-900 rounded-xl overflow-hidden mb-6">
+    <div className="space-y-6">
+      <div className="aspect-video bg-surface-950 rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-surface-200">
         {content.url ? (
           <iframe
             src={getEmbedUrl(content.url)}
@@ -201,18 +204,18 @@ const VideoViewer: React.FC<{
             title={content.title}
           />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
+          <div className="w-full h-full flex flex-col items-center justify-center text-surface-400">
             <div className="text-center mb-4">
-              <svg className="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-16 h-16 mx-auto mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <p>{t('micro.videoNotAvailable')}</p>
+              <p className="font-bold uppercase tracking-widest text-xs">{t('micro.videoNotAvailable')}</p>
             </div>
             {onGenerateStory && (
               <button
                 onClick={onGenerateStory}
-                className="px-4 py-2 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 font-medium hover:bg-indigo-100"
+                className="px-6 py-3 rounded-2xl bg-primary-500 text-white font-black hover:bg-primary-600 transition-all shadow-lg shadow-primary-500/20"
               >
                 {isStoryLoading ? t('micro.generatingStory') : t('micro.generateStory')}
               </button>
@@ -222,17 +225,18 @@ const VideoViewer: React.FC<{
       </div>
 
       {content.description && (
-        <div className="prose prose-slate max-w-none">
-          <p className="text-slate-600">{content.description}</p>
+        <div className="prose prose-slate dark:prose-invert max-w-none">
+          <p className="text-surface-600 dark:text-surface-400 font-bold leading-relaxed">{content.description}</p>
         </div>
       )}
 
       {content.transcript && (
-        <details className="mt-6 border border-slate-200 rounded-xl">
-          <summary className="p-4 cursor-pointer font-medium text-slate-700 hover:bg-slate-50">
-            📄 {t('micro.viewTranscript')}
+        <details className="group border border-surface-200 rounded-[2rem] bg-surface-100 overflow-hidden">
+          <summary className="p-6 cursor-pointer font-black text-surface-700 uppercase tracking-widest text-xs list-none flex items-center justify-between hover:bg-surface-200/50 transition-colors">
+            <span>📄 {t('micro.viewTranscript')}</span>
+            <span className="text-surface-400 group-open:rotate-180 transition-transform">▼</span>
           </summary>
-          <div className="p-4 pt-0 text-slate-600 text-sm leading-relaxed whitespace-pre-wrap">
+          <div className="p-6 pt-0 text-surface-600 dark:text-surface-400 font-bold text-sm leading-relaxed whitespace-pre-wrap border-t border-surface-200/50 mt-4 pt-6">
             {content.transcript}
           </div>
         </details>
@@ -242,7 +246,7 @@ const VideoViewer: React.FC<{
 };
 
 // Quiz Viewer Component
-const QuizViewer: React.FC<{ content: QuizMicrosection['content']; t: (key: string) => string }> = ({ content, t }) => {
+const QuizViewer: React.FC<{ content: QuizMicrosection['content']; t: (key: TranslationKey) => string }> = ({ content, t }) => {
   const [answers, setAnswers] = useState<Record<string, string | number>>({});
   const [submitted, setSubmitted] = useState(false);
   const [showResults, setShowResults] = useState(false);
@@ -260,85 +264,100 @@ const QuizViewer: React.FC<{ content: QuizMicrosection['content']; t: (key: stri
   const score = useMemo(() => {
     if (!submitted) return 0;
     return content.questions.reduce((acc, q) => {
-      return acc + (answers[q.id] === q.correctAnswer ? 1 : 0);
+      const answer = answers[q.id];
+      // Normalize comparison for safety
+      return acc + (String(answer) === String(q.correctAnswer) ? 1 : 0);
     }, 0);
   }, [submitted, content.questions, answers]);
 
   return (
-    <div>
+    <div className="space-y-8">
       {content.description && (
-        <div className="text-slate-600 mb-6">
+        <div className="text-surface-600 dark:text-surface-400 font-bold mb-8">
           <MathText text={content.description} />
         </div>
       )}
 
       {content.timeLimit && !submitted && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6 flex items-center gap-2 text-amber-800">
-          <span>⏱️</span>
-          <span>{t('micro.timeLimit')}: {content.timeLimit} minutes</span>
+        <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 mb-8 flex items-center gap-3 text-amber-800 dark:text-amber-200 font-bold">
+          <span className="text-xl">⏱️</span>
+          <span className="uppercase text-xs tracking-widest">{t('micro.timeLimit')}: {content.timeLimit} minutes</span>
         </div>
       )}
 
       {showResults && (
-        <div className={`rounded-xl p-6 mb-6 ${score === content.questions.length ? 'bg-green-50 border border-green-200' : 'bg-blue-50 border border-blue-200'}`}>
-          <h3 className={`text-xl font-bold mb-2 ${score === content.questions.length ? 'text-green-800' : 'text-blue-800'}`}>
+        <div className={`rounded-[2.5rem] p-8 mb-8 border-4 animate-in zoom-in-95 duration-500 ${score === content.questions.length
+          ? 'bg-primary-50 dark:bg-primary-900/10 border-primary-500 shadow-xl shadow-primary-500/20'
+          : 'bg-surface-100 dark:bg-surface-800 binary-border border-surface-200'}`}>
+          <h3 className={`text-2xl font-black mb-2 uppercase tracking-tight ${score === content.questions.length ? 'text-primary-600' : 'text-surface-900'}`}>
             {score === content.questions.length ? '🎉 Perfect Score!' : `You scored ${score}/${content.questions.length}`}
           </h3>
-          <p className={score === content.questions.length ? 'text-green-700' : 'text-blue-700'}>
+          <p className={`font-bold ${score === content.questions.length ? 'text-primary-700' : 'text-surface-600'}`}>
             {score === content.questions.length
-              ? 'Great job! You got all questions correct.'
-              : `Review the questions below to see the correct answers.`
+              ? 'Incredible mastery! You\'ve conquered this lesson.'
+              : `Great effort! Review the questions below to strengthen your understanding.`
             }
           </p>
         </div>
       )}
 
-      <div className="space-y-6">
+      <div className="space-y-8">
         {content.questions.map((question, qIndex) => {
-          const isCorrect = submitted && answers[question.id] === question.correctAnswer;
-          const isWrong = submitted && answers[question.id] !== undefined && answers[question.id] !== question.correctAnswer;
+          const isCorrect = submitted && String(answers[question.id]) === String(question.correctAnswer);
+          const isWrong = submitted && answers[question.id] !== undefined && String(answers[question.id]) !== String(question.correctAnswer);
 
           return (
             <div
               key={question.id}
-              className={`border rounded-xl p-5 ${isCorrect ? 'border-green-300 bg-green-50' : isWrong ? 'border-red-300 bg-red-50' : 'border-slate-200'}`}
+              className={`border-2 rounded-[2rem] p-8 transition-all duration-300 ${isCorrect
+                ? 'border-primary-500 bg-primary-50/30'
+                : isWrong
+                  ? 'border-red-500 bg-red-50/30'
+                  : 'border-surface-200 bg-surface-50 dark:bg-surface-100/30'}`}
             >
-              <div className="flex items-start gap-3 mb-4">
-                <span className="bg-slate-100 text-slate-600 w-7 h-7 rounded-full flex items-center justify-center text-sm font-semibold">
+              <div className="flex items-start gap-5 mb-8">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg shrink-0 shadow-lg ${isCorrect ? 'bg-primary-500 text-white shadow-primary-500/20' : isWrong ? 'bg-red-500 text-white shadow-red-500/20' : 'bg-surface-200 text-surface-600'}`}>
                   {qIndex + 1}
-                </span>
-                <div className="flex-1">
-                  <div className="font-medium text-slate-900">
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-black text-surface-900 text-lg tracking-tight mt-1">
                     <MathText text={question.question} />
                   </div>
                   {question.points && (
-                    <span className="text-xs text-slate-400 mt-1">{question.points} points</span>
+                    <span className="text-[10px] font-black text-surface-400 uppercase tracking-widest mt-2 inline-block bg-surface-200 px-2 py-0.5 rounded-lg">{question.points} points</span>
                   )}
                 </div>
               </div>
 
               {question.type === 'multiple-choice' && question.options && (
-                <div className="space-y-2 ml-10">
+                <div className="grid grid-cols-1 gap-3 ml-0 lg:ml-16">
                   {question.options.map((option, optIndex) => {
                     const isSelected = answers[question.id] === optIndex;
-                    const isCorrectOption = submitted && question.correctAnswer === optIndex;
+                    const isCorrectOption = submitted && String(question.correctAnswer) === String(optIndex);
+                    const isWrongSelected = submitted && isSelected && !isCorrect;
 
                     return (
                       <button
                         key={optIndex}
                         onClick={() => handleAnswer(question.id, optIndex)}
                         disabled={submitted}
-                        className={`w-full text-left p-3 rounded-lg border transition-all ${isCorrectOption
-                          ? 'border-green-500 bg-green-100 text-green-800'
-                          : isSelected && isWrong
-                            ? 'border-red-500 bg-red-100 text-red-800'
+                        className={`w-full text-left p-5 rounded-2xl border-2 font-bold transition-all relative ${isCorrectOption
+                          ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700'
+                          : isWrongSelected
+                            ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700'
                             : isSelected
-                              ? 'border-blue-500 bg-blue-50'
-                              : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                          } ${submitted ? 'cursor-default' : 'cursor-pointer'}`}
+                              ? 'border-primary-400 bg-primary-50/50'
+                              : 'border-surface-200 bg-white dark:bg-surface-800 hover:border-surface-300 hover:bg-surface-50'
+                          } ${submitted ? 'cursor-default' : 'cursor-pointer active:scale-[0.98]'}`}
                       >
-                        <span className="font-medium mr-2">{String.fromCharCode(65 + optIndex)}.</span>
-                        {option}
+                        <div className="flex items-center gap-4">
+                          <span className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black transition-colors ${isSelected || isCorrectOption ? 'bg-primary-500 text-white' : 'bg-surface-200 text-surface-500'}`}>
+                            {String.fromCharCode(65 + optIndex)}
+                          </span>
+                          <span className="flex-1"><MathText text={option.toString()} /></span>
+                          {isCorrectOption && <span className="text-primary-500 font-black">✓</span>}
+                          {isWrongSelected && <span className="text-red-500 font-black">×</span>}
+                        </div>
                       </button>
                     );
                   })}
@@ -346,24 +365,25 @@ const QuizViewer: React.FC<{ content: QuizMicrosection['content']; t: (key: stri
               )}
 
               {question.type === 'true-false' && (
-                <div className="flex gap-3 ml-10">
+                <div className="flex gap-4 ml-0 lg:ml-16">
                   {['True', 'False'].map((option) => {
                     const value = option.toLowerCase();
                     const isSelected = answers[question.id] === value;
-                    const isCorrectOption = submitted && question.correctAnswer === value;
+                    const isCorrectOption = submitted && String(question.correctAnswer) === String(value);
+                    const isWrongSelected = submitted && isSelected && !isCorrect;
 
                     return (
                       <button
                         key={option}
                         onClick={() => handleAnswer(question.id, value)}
                         disabled={submitted}
-                        className={`flex-1 p-3 rounded-lg border transition-all ${isCorrectOption
-                          ? 'border-green-500 bg-green-100 text-green-800'
-                          : isSelected && isWrong
-                            ? 'border-red-500 bg-red-100 text-red-800'
+                        className={`flex-1 p-5 rounded-2xl border-2 font-black uppercase tracking-widest text-xs transition-all ${isCorrectOption
+                          ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700'
+                          : isWrongSelected
+                            ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700'
                             : isSelected
-                              ? 'border-blue-500 bg-blue-50'
-                              : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                              ? 'border-primary-400 bg-primary-50/50'
+                              : 'border-surface-200 bg-white dark:bg-surface-800 hover:border-surface-300 hover:bg-surface-50'
                           } ${submitted ? 'cursor-default' : 'cursor-pointer'}`}
                       >
                         {option}
@@ -374,9 +394,9 @@ const QuizViewer: React.FC<{ content: QuizMicrosection['content']; t: (key: stri
               )}
 
               {submitted && question.explanation && (
-                <div className="mt-3 ml-10 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
-                  <span className="font-medium">Explanation: </span>
-                  {question.explanation}
+                <div className="mt-8 ml-0 lg:ml-16 p-6 bg-surface-100 dark:bg-surface-800 border-l-4 border-primary-500 rounded-r-2xl text-sm text-surface-600 dark:text-surface-400 font-bold leading-relaxed shadow-inner">
+                  <span className="font-black uppercase text-[10px] tracking-widest block mb-1 text-primary-600">Explanation</span>
+                  <MathText text={question.explanation} />
                 </div>
               )}
             </div>
@@ -388,9 +408,9 @@ const QuizViewer: React.FC<{ content: QuizMicrosection['content']; t: (key: stri
         <button
           onClick={handleSubmit}
           disabled={Object.keys(answers).length < content.questions.length}
-          className={`mt-6 w-full py-3 rounded-xl font-semibold transition-all ${Object.keys(answers).length >= content.questions.length
-            ? 'bg-blue-600 text-white hover:bg-blue-700'
-            : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+          className={`mt-10 w-full py-5 rounded-[2rem] font-black uppercase tracking-widest text-sm transition-all shadow-xl ${Object.keys(answers).length >= content.questions.length
+            ? 'bg-primary-500 text-white hover:bg-primary-600 shadow-primary-500/30'
+            : 'bg-surface-200 text-surface-400 cursor-not-allowed shadow-none grayscale'
             }`}
         >
           Submit Quiz
@@ -401,7 +421,7 @@ const QuizViewer: React.FC<{ content: QuizMicrosection['content']; t: (key: stri
 };
 
 // Practice Viewer Component
-const PracticeViewer: React.FC<{ content: PracticeMicrosection['content']; t: (key: string) => string }> = ({ content, t }) => {
+const PracticeViewer: React.FC<{ content: PracticeMicrosection['content']; t: (key: TranslationKey) => string }> = ({ content, t }) => {
   return <QuizViewer content={{ id: content.id, title: content.title, description: content.description, questions: content.questions }} t={t} />;
 };
 
@@ -413,6 +433,7 @@ interface MicrosectionApiResponse {
   };
   section: {
     id: string;
+    lessonId: string; // The UUID from the DB
     slug: string;
     title: string;
   };
@@ -441,6 +462,11 @@ export function MicrosectionPage() {
   const [data, setData] = useState<MicrosectionApiResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Bookmark & Completion State
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [isActing, setIsActing] = useState(false);
 
   // Accessibility state
   // Accessibility state
@@ -471,7 +497,8 @@ export function MicrosectionPage() {
 
       try {
         const response = await fetch(
-          apiUrl(`/api/lessons/structured/${classId}/${subjectId}/${chapterSlug}/${sectionSlug}/${microsectionId}`)
+          apiUrl(`/api/lessons/structured/${classId}/${subjectId}/${chapterSlug}/${sectionSlug}/${microsectionId}?lang=${language}`),
+          { credentials: 'include' }
         );
 
         if (!response.ok) {
@@ -480,6 +507,33 @@ export function MicrosectionPage() {
 
         const responseData: MicrosectionApiResponse = await response.json();
         setData(responseData);
+
+        // Fetch bookmark/completion status
+        const [bkRes, prRes] = await Promise.all([
+          fetch(apiUrl('/api/bookmarks'), {
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
+          }),
+          fetch(apiUrl('/api/progress/stats'), {
+            credentials: 'include'
+          })
+        ]);
+
+        if (bkRes.ok) {
+          const bookmarks = await bkRes.json();
+          setIsBookmarked(bookmarks.some((b: any) =>
+            b.lessonId === responseData.section.lessonId && b.microsectionId === microsectionId
+          ));
+        }
+        if (prRes.ok) {
+          const stats = await prRes.json();
+          // The stats.completions might be a different structure depending on progress.ts
+          // Given the current progress.ts, it returns completions for the user
+          // We need to check both lessonId and microsectionId
+          setIsCompleted(stats.completions?.some((c: any) =>
+            c.lessonId === responseData.section.lessonId && c.microsectionId === microsectionId
+          ) || false);
+        }
       } catch (err) {
         console.error('Error fetching microsection:', err);
         setError(err instanceof Error ? err.message : 'Failed to load content');
@@ -500,7 +554,8 @@ export function MicrosectionPage() {
       if (!classId || !subjectId || !chapterSlug || !sectionSlug) return;
       try {
         const response = await fetch(
-          `http://localhost:8000/api/story/${classId}/${subjectId}/${chapterSlug}/${sectionSlug}`
+          apiUrl(`/api/story/${classId}/${subjectId}/${chapterSlug}/${sectionSlug}`),
+          { credentials: 'include' }
         );
         if (!response.ok) {
           return;
@@ -516,6 +571,72 @@ export function MicrosectionPage() {
 
     preloadStory();
   }, [classId, subjectId, chapterSlug, sectionSlug]);
+
+  const toggleBookmark = async () => {
+    if (isActing || !microsectionId || !data?.section?.lessonId) return;
+    setIsActing(true);
+    try {
+      const parentLessonId = data.section.lessonId;
+      const method = isBookmarked ? 'DELETE' : 'POST';
+      const url = isBookmarked
+        ? `/api/bookmarks/${parentLessonId}/${microsectionId}`
+        : '/api/bookmarks';
+      const body = isBookmarked ? undefined : JSON.stringify({
+        lessonId: parentLessonId,
+        microsectionId
+      });
+
+      const res = await fetch(apiUrl(url), {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body
+      });
+
+      if (res.ok) {
+        setIsBookmarked(!isBookmarked);
+      }
+    } catch (err) {
+      console.error('Failed to toggle bookmark', err);
+    } finally {
+      setIsActing(false);
+    }
+  };
+
+  const toggleCompletion = async () => {
+    if (isActing || !microsectionId || !data?.section?.lessonId) return;
+    setIsActing(true);
+    try {
+      const parentLessonId = data.section.lessonId;
+      const method = isCompleted ? 'DELETE' : 'POST';
+      const url = isCompleted
+        ? `/api/progress/complete/${parentLessonId}/${microsectionId}`
+        : '/api/progress/complete';
+      const body = isCompleted ? undefined : JSON.stringify({
+        lessonId: parentLessonId,
+        microsectionId
+      });
+
+      const res = await fetch(apiUrl(url), {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body
+      });
+
+      if (res.ok) {
+        setIsCompleted(!isCompleted);
+      }
+    } catch (err) {
+      console.error('Failed to toggle completion', err);
+    } finally {
+      setIsActing(false);
+    }
+  };
 
   // Voice Control Listener
   useEffect(() => {
@@ -572,6 +693,7 @@ export function MicrosectionPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           lesson: lessonText,
           normalize: true
@@ -725,14 +847,13 @@ export function MicrosectionPage() {
     setIsStoryLoading(true);
     setStoryError(null);
     try {
-      const response = await fetch(`${API_BASE}/api/story/generate`, {
+      const response = await fetch(apiUrl('/api/story/generate'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
-          classId,
-          subjectId,
-          chapterSlug,
-          sectionSlug
+          classId, subjectId, chapterSlug, sectionSlug, microsectionId,
+          content: data?.microsection // Pass the current microsection content
         })
       });
 
@@ -757,17 +878,11 @@ export function MicrosectionPage() {
     if (!targetStory) return;
     setIsAudioLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/api/story/audio', {
+      const response = await fetch(apiUrl('/api/story/audio'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          classId,
-          subjectId,
-          chapterSlug,
-          sectionSlug,
-          locale: language,
-          force
-        })
+        credentials: 'include',
+        body: JSON.stringify({ storyId: targetStory.id, locale: language, force })
       });
 
       if (!response.ok) {
@@ -805,9 +920,10 @@ export function MicrosectionPage() {
       const article = data.microsection as ArticleMicrosection;
       const lessonText = extractArticleRawText(article.content);
 
-      const response = await fetch('http://localhost:8000/api/braille/convert', {
+      const response = await fetch(apiUrl('/api/braille/convert'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ lesson: lessonText })
       });
 
@@ -840,9 +956,10 @@ export function MicrosectionPage() {
         const article = data.microsection as ArticleMicrosection;
         const lessonText = extractArticleRawText(article.content);
 
-        const response = await fetch('http://localhost:8000/api/braille/convert', {
+        const response = await fetch(apiUrl('/api/braille/convert'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ lesson: lessonText })
         });
 
@@ -865,14 +982,13 @@ export function MicrosectionPage() {
       setIsStoryLoading(true);
       setStoryError(null);
       try {
-        const response = await fetch(`${API_BASE}/api/story/generate`, {
+        const response = await fetch(apiUrl('/api/story/generate'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
-            classId,
-            subjectId,
-            chapterSlug,
-            sectionSlug
+            classId, subjectId, chapterSlug, sectionSlug, microsectionId,
+            content: data?.microsection // Pass the current microsection content
           })
         });
 
@@ -1002,7 +1118,43 @@ export function MicrosectionPage() {
                   </span>
                 )}
               </div>
-              <h1 className="font-bold text-lg text-slate-900">{microsection.title}</h1>
+              <div className="flex items-center gap-3">
+                <h1 className="font-bold text-lg text-slate-900">{microsection.title}</h1>
+                <div className="flex items-center gap-1 ml-2">
+                  <button
+                    onClick={toggleBookmark}
+                    disabled={isActing}
+                    className={`p-1.5 rounded-lg transition-all ${isBookmarked
+                      ? 'text-amber-500 hover:bg-amber-50'
+                      : 'text-slate-300 hover:text-slate-400 hover:bg-slate-50'
+                      }`}
+                    title={isBookmarked ? "Remove Bookmark" : "Bookmark Lesson"}
+                  >
+                    <svg className={`w-5 h-5 ${isBookmarked ? 'fill-current' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={toggleCompletion}
+                    disabled={isActing}
+                    className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold transition-all border ${isCompleted
+                      ? 'bg-green-500 border-green-500 text-white'
+                      : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+                      }`}
+                  >
+                    {isCompleted ? (
+                      <>
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        Completed
+                      </>
+                    ) : (
+                      "Mark Complete"
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
             <div className="ml-auto">
               <AccessibilityToolbar

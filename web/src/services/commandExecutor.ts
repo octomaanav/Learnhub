@@ -101,6 +101,11 @@ export class CommandExecutor {
             result = { success };
             break;
 
+          case 'planLesson':
+            success = this.planLesson(call.args.topic, call.args.steps);
+            result = { success };
+            break;
+
 
           default:
             console.warn('[CommandExecutor] Unknown tool:', call.name);
@@ -464,6 +469,23 @@ export class CommandExecutor {
       return true;
     } catch (error) {
       console.error('[CommandExecutor] Failed to push visual:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Plan a lesson session
+   */
+  private planLesson(topic: string, steps: string[]): boolean {
+    try {
+      console.log('[CommandExecutor] Agent planned a lesson:', topic, steps);
+      const event = new CustomEvent('lesson-plan-update', {
+        detail: { topic, steps }
+      });
+      window.dispatchEvent(event);
+      return true;
+    } catch (error) {
+      console.error('[CommandExecutor] Failed to plan lesson:', error);
       return false;
     }
   }

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import type { User, AuthData } from '../types';
 import { apiUrl } from '../utils/api';
 
@@ -8,6 +8,9 @@ interface AuthContextType {
     error: string | null;
     isAuthenticated: boolean;
     isProfileComplete: boolean;
+    theme: 'light' | 'dark';
+    toggleTheme: () => void;
+    logout: () => Promise<void>;
     refetch: () => Promise<void>;
     setUser: (user: User | null) => void;
 }
@@ -19,6 +22,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Start with loading true to block premature rendering
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [theme, setTheme] = useState<'light' | 'dark'>(
+        (localStorage.getItem('theme') as 'light' | 'dark') || 'light'
+    );
+
+    useEffect(() => {
+        if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        localStorage.setItem('theme', theme);
+    }, [theme]);
 
     const fetchUser = async () => {
         // Only set loading if we don't have a user (initial load)
@@ -58,7 +73,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     useEffect(() => {
         fetchUser();
-    }, []);
+    }, []); // Only fetch on mount
+
+    useEffect(() => {
+        if (!user) return;
+
+        const interval = setInterval(() => {
+            fetch(apiUrl('/api/auth/me'), { credentials: 'include' })
+                .then(res => {
+                    if (res.status === 401) {
+                        console.log('[Auth] Session expired');
+                        setUser(null);
+                    }
+                })
+                .catch(() => { });
+        }, 60000 * 5); // every 5 mins
+
+        return () => clearInterval(interval);
+    }, [user]); // Reset interval if user status changes
+
+    const logout = async () => {
+        try {
+            await fetch(apiUrl('/api/auth/logout'), {
+                method: 'POST',
+                credentials: 'include'
+            });
+            setUser(null);
+        } catch (err) {
+            console.error('[Auth] Logout failed:', err);
+            // Even if network fails, clear local state
+            setUser(null);
+        }
+    };
+
+    const toggleTheme = () => {
+        setTheme(prev => prev === 'light' ? 'dark' : 'light');
+    };
 
     const value: AuthContextType = {
         user,
@@ -66,6 +116,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         error,
         isAuthenticated: !!user,
         isProfileComplete: user?.isProfileComplete ?? false,
+        theme,
+        toggleTheme,
+        logout,
         refetch: fetchUser,
         setUser
     };

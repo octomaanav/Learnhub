@@ -23,6 +23,8 @@ import contentRouter from "./routes/content.js";
 import storyV2Router from "./routes/story_v2.js";
 import brailleV2Router from "./routes/braille_v2.js";
 import webhooksRouter from "./routes/webhooks.js";
+import bookmarksRouter from "./routes/bookmarks.js";
+import progressRouter from "./routes/progress.js";
 import { sendProactiveNudges } from "./services/telegramService.js";
 
 const app = express();
@@ -125,6 +127,8 @@ app.use("/api/content", contentRouter);
 app.use("/api/story_v2", storyV2Router);
 app.use("/api/braille_v2", brailleV2Router);
 app.use("/api/webhooks", webhooksRouter);
+app.use("/api/bookmarks", bookmarksRouter);
+app.use("/api/progress", progressRouter);
 
 // Demo endpoint to trigger Telegram Nudge
 app.post("/api/telegram/nudge", async (req, res) => {

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import { Flame, Zap, BookOpen, Trophy, Target, ArrowRight, CheckCircle2, Sparkles, Moon, Sun } from "lucide-react";
 
 const features = [
@@ -53,8 +54,7 @@ const waveformHeights = [18, 34, 52, 30, 20];
 function HomePage() {
   const navigate = useNavigate();
 
-  // Theme Toggle State
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const { theme, toggleTheme } = useAuth();
   const [isHeroVisible, setIsHeroVisible] = useState(false);
 
   // Void Mode States
@@ -144,14 +144,14 @@ function HomePage() {
   }, []);
 
   return (
-    <div className={`${theme} min-h-screen font-sans selection:bg-[#069494]/30 selection:text-[#069494] overflow-x-hidden relative transition-colors duration-500 bg-surface-50 dark:bg-[#0B0F19] text-surface-900 dark:text-white`}>
+    <div className={`${theme} min-h-screen font-sans selection:bg-[#069494]/30 selection:text-[#069494] overflow-x-hidden relative transition-colors duration-500 bg-surface-50 text-surface-900`}>
 
       <header
         className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${isDissolving || isVoidMode ? 'opacity-0 -translate-y-4 pointer-events-none' : 'opacity-100 translate-y-0'
           }`}
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-4">
-          <div className="flex items-center justify-between rounded-2xl border border-surface-200/80 dark:border-surface-700/80 bg-white/85 dark:bg-[#0F172A]/85 backdrop-blur-md shadow-sm px-4 sm:px-5 py-3">
+          <div className="flex items-center justify-between rounded-2xl border border-surface-200 dark:border-surface-700 bg-surface-100/85 backdrop-blur-md shadow-sm px-4 sm:px-5 py-3">
             <button
               onClick={() => navigate('/')}
               className="font-display text-xl font-black tracking-tight text-surface-900 dark:text-white"
@@ -179,7 +179,7 @@ function HomePage() {
                 Sign Up
               </button>
               <button
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                onClick={() => toggleTheme()}
                 aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
                 className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-[#069494] text-white hover:bg-[#047c7c] transition-colors"
               >
@@ -217,7 +217,7 @@ function HomePage() {
               Every button, every menu, every click <span className="text-[#069494]">is a barrier someone can't cross.</span>
             </h1>
 
-            <p className={`text-lg md:text-xl text-surface-700 dark:text-surface-300 font-medium max-w-3xl mx-auto leading-relaxed mb-14 transition-all duration-700 delay-300 ease-out ${isHeroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+            <p className={`text-lg md:text-xl text-surface-700 font-medium max-w-3xl mx-auto leading-relaxed mb-14 transition-all duration-700 delay-300 ease-out ${isHeroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
               A major limitation to software usage across the entire globe is UI. So LearnHub asks: what if we get rid of the UI entirely?
             </p>
 
@@ -253,7 +253,7 @@ function HomePage() {
             }`}
         >
           <div className="w-full max-w-5xl mx-auto mb-12">
-            <div className={`bg-white dark:bg-[#131B2C] rounded-[2rem] shadow-xl dark:shadow-2xl border border-surface-200 dark:border-[#1E293B] p-8 transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)] ${isDissolving ? 'opacity-0 blur-xl scale-95 translate-y-8 delay-[900ms]' : 'opacity-100 blur-0 scale-100 translate-y-0 delay-0'
+            <div className={`bg-surface-100 rounded-[2rem] shadow-xl dark:shadow-2xl border border-surface-200 dark:border-surface-700 p-8 transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)] ${isDissolving ? 'opacity-0 blur-xl scale-95 translate-y-8 delay-[900ms]' : 'opacity-100 blur-0 scale-100 translate-y-0 delay-0'
               }`}>
               {/* Daily Stats */}
               <div className="flex items-center gap-8 border-b border-surface-100 dark:border-[#1E293B] pb-6 mb-8">
@@ -284,7 +284,7 @@ function HomePage() {
                   { title: "Art History", icon: "⭐", color: "bg-surface-100 dark:bg-[#1E293B] text-surface-900 dark:text-white", progress: "15%", progressColor: "bg-surface-300 dark:bg-surface-600" },
                   { title: "Physics", icon: "📊", color: "bg-surface-100 dark:bg-[#1E293B] text-surface-900 dark:text-white", progress: "60%", progressColor: "bg-[#069494]" },
                 ].map((course, idx) => (
-                  <div key={idx} className="bg-surface-50 dark:bg-[#0B0F19] border border-surface-200 dark:border-[#1E293B] rounded-2xl p-5 hover:bg-surface-100 dark:hover:bg-[#1E293B] hover:border-surface-300 dark:hover:border-surface-700 transition-all cursor-pointer group">
+                  <div key={idx} className="bg-surface-50 border border-surface-200 rounded-2xl p-5 hover:bg-surface-200 transition-all cursor-pointer group">
                     <div className="flex items-center gap-3 mb-4">
                       <div className={`w-8 h-8 ${course.color} rounded-lg flex items-center justify-center text-sm`}>
                         {course.icon}
@@ -337,7 +337,7 @@ function HomePage() {
             {features.map((f) => (
               <div
                 key={f.title}
-                className="group p-8 rounded-3xl bg-white dark:bg-[#131B2C] shadow-sm border border-surface-200 dark:border-[#1E293B] hover:border-[#069494]/50 dark:hover:border-[#069494]/50 hover:-translate-y-1 transition-all duration-200"
+                className="group p-8 rounded-3xl bg-surface-100 shadow-sm border border-surface-200 hover:border-[#069494]/50 hover:-translate-y-1 transition-all duration-200"
               >
                 <div className="w-12 h-12 rounded-2xl bg-[#069494]/10 flex items-center justify-center mb-6 group-hover:bg-[#069494]/20 transition-colors">
                   <f.icon className="w-6 h-6 text-[#069494]" />
@@ -350,7 +350,7 @@ function HomePage() {
         </section>
 
         {/* How it works */}
-        <section className={`px-6 py-20 bg-white dark:bg-[#0B0F19] border-y border-surface-200 dark:border-[#1E293B] transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)] ${isDissolving ? 'opacity-0 blur-xl scale-95 translate-y-8 delay-[300ms]' : 'opacity-100 blur-0 scale-100 translate-y-0 delay-0'
+        <section className={`px-6 py-20 bg-surface-50 border-y border-surface-200 transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)] ${isDissolving ? 'opacity-0 blur-xl scale-95 translate-y-8 delay-[300ms]' : 'opacity-100 blur-0 scale-100 translate-y-0 delay-0'
           }`}>
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-14">
@@ -380,7 +380,7 @@ function HomePage() {
         {/* CTA */}
         <section className={`px-6 py-12 md:py-24 max-w-4xl mx-auto transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)] ${isDissolving ? 'opacity-0 blur-xl scale-95 translate-y-8 delay-[0ms]' : 'opacity-100 blur-0 scale-100 translate-y-0 delay-0'
           }`}>
-          <div className="text-center bg-gradient-to-br from-surface-100 dark:from-[#131B2C] to-white dark:to-[#0B0F19] rounded-[2.5rem] shadow-xl dark:shadow-2xl border border-surface-200 dark:border-[#1E293B] p-12 md:p-16 flex flex-col items-center">
+          <div className="text-center bg-surface-100 rounded-[2.5rem] shadow-xl dark:shadow-2xl border border-surface-200 p-12 md:p-16 flex flex-col items-center">
             <Trophy className="w-12 h-12 text-[#069494] mx-auto mb-6" />
             <h2 className="text-3xl md:text-4xl font-display font-black text-surface-900 dark:text-white mb-4 tracking-tight">
               Ready to experience the future?
@@ -430,7 +430,7 @@ function HomePage() {
           VOID MODE LAYER (Appears after UI dissolves)
           ========================================= */}
       <div
-        className={`fixed inset-0 z-50 bg-[#f1f5f9] flex flex-col items-center justify-center transition-opacity duration-1000 ease-in-out ${isVoidMode ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        className={`fixed inset-0 z-50 bg-surface-50 flex flex-col items-center justify-center transition-opacity duration-1000 ease-in-out ${isVoidMode ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
           }`}
       >
         {/* Soft Blue Outer Glow Effect */}
@@ -449,7 +449,7 @@ function HomePage() {
               {[...Array(5)].map((_, i) => (
                 <div
                   key={i}
-                  className="w-[3px] bg-surface-600 rounded-full animate-pulse shadow-sm"
+                  className="w-[3px] bg-slate-400 dark:bg-surface-600 rounded-full animate-pulse shadow-sm"
                   style={{
                     height: `${waveformHeights[i]}px`,
                     animationDelay: `${i * 0.1}s`,
@@ -474,7 +474,7 @@ function HomePage() {
                 <p className="text-xl font-display font-black text-surface-900 mb-3 tracking-tight">
                   "{step.text}"
                 </p>
-                <p className="text-base font-medium text-surface-600">
+                <p className="text-base font-medium text-surface-500">
                   {step.subtext}
                 </p>
               </div>
@@ -499,7 +499,7 @@ function HomePage() {
             setIsVoidMode(false);
             setIsDissolving(false);
           }}
-          className={`absolute top-6 right-6 text-xs font-semibold text-surface-400 hover:text-surface-900 transition-all duration-[1000ms] bg-white border border-surface-200 px-4 py-2 rounded shadow-sm flex items-center gap-2 ${voidSequenceStep >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+          className={`absolute top-6 right-6 text-xs font-semibold text-surface-400 hover:text-surface-900 transition-all duration-[1000ms] bg-surface-100 border border-surface-200 px-4 py-2 rounded shadow-sm flex items-center gap-2 ${voidSequenceStep >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             }`}
         >
           Exit Void

@@ -98,7 +98,7 @@ const upcomingFeatures = [
 ];
 
 function AdminDashboardPage() {
-  const [isZenMode, setIsZenMode] = useState(false);
+  const [isPulseMode, setIsPulseMode] = useState(false);
   const { startListening, stopListening } = useVoiceAgent();
   const [visualState, setVisualState] = useState<{ description: string, type: string, mermaidCode?: string } | null>(null);
 
@@ -111,16 +111,16 @@ function AdminDashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (isZenMode) {
+    if (isPulseMode) {
       startListening();
     } else {
       stopListening();
     }
-  }, [isZenMode, startListening, stopListening]);
+  }, [isPulseMode, startListening, stopListening]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 overflow-hidden">
-      <div className={`transition-all duration-1000 ease-in-out ${isZenMode ? 'blur-xl opacity-0 scale-95 -translate-y-4 pointer-events-none' : 'blur-none opacity-100 scale-100 translate-y-0'}`}>
+      <div className={`transition-all duration-1000 ease-in-out ${isPulseMode ? 'blur-xl opacity-0 scale-95 -translate-y-4 pointer-events-none' : 'blur-none opacity-100 scale-100 translate-y-0'}`}>
         {/* Header */}
         <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -139,11 +139,11 @@ function AdminDashboardPage() {
               </div>
               <div className="flex items-center gap-4">
                 <button
-                  onClick={() => setIsZenMode(!isZenMode)}
-                  className={`p-3 rounded-xl border-2 transition-all font-bold font-display ${isZenMode ? 'bg-secondary-500 text-white border-secondary-600 shadow-sm transform -translate-y-0.5' : 'bg-surface-100 text-surface-600 border-surface-200 hover:bg-surface-200 hover:border-surface-300'}`}
-                  title="Toggle Zen Mode"
+                  onClick={() => setIsPulseMode(!isPulseMode)}
+                  className={`p-3 rounded-xl border-2 transition-all font-bold font-display ${isPulseMode ? 'bg-secondary-500 text-white border-secondary-600 shadow-sm transform -translate-y-0.5' : 'bg-surface-100 text-surface-600 border-surface-200 hover:bg-surface-200 hover:border-surface-300'}`}
+                  title="Toggle Pulse"
                 >
-                  {isZenMode ? 'Exit Zen Mode' : 'Zen Mode 🧘‍♂️'}
+                  {isPulseMode ? 'Exit Pulse' : 'Pulse'}
                 </button>
                 <Link
                   to="/dashboard"
@@ -253,12 +253,12 @@ function AdminDashboardPage() {
         </main>
       </div>
 
-      {/* Zen Mode Overlay */}
+      {/* Pulse Overlay */}
       <div
-        className={`fixed inset-0 bg-white/95 backdrop-blur-sm z-50 transition-all duration-1000 ease-in-out overflow-y-auto ${isZenMode ? 'opacity-100 pointer-events-auto delay-300' : 'opacity-0 pointer-events-none'}`}
+        className={`fixed inset-0 bg-white/95 backdrop-blur-sm z-50 transition-all duration-1000 ease-in-out overflow-y-auto ${isPulseMode ? 'opacity-100 pointer-events-auto delay-300' : 'opacity-0 pointer-events-none'}`}
       >
         <div className="min-h-full w-full flex flex-col items-center justify-center py-12">
-          {isZenMode && (
+          {isPulseMode && (
             <div className="text-center w-full max-w-4xl px-8 flex flex-col items-center justify-center">
               <div className="flex items-center justify-center gap-2 mb-12 h-24">
                 <style>
@@ -313,10 +313,10 @@ function AdminDashboardPage() {
               </div>
 
               <button
-                onClick={() => setIsZenMode(false)}
+                onClick={() => setIsPulseMode(false)}
                 className="mt-12 px-8 py-4 bg-surface-200 hover:bg-surface-300 text-surface-700 font-bold rounded-2xl transition-all"
               >
-                Exit Zen Mode
+                Exit Pulse
               </button>
             </div>
           )}

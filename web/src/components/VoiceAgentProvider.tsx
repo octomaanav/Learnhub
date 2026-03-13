@@ -9,7 +9,7 @@ import { fetchSubjectsWithChapters } from '../data/curriculumData';
 import { toolDeclarations } from '../utils/toolDeclarations';
 import { CommandExecutor } from '../services/commandExecutor';
 
-export type AgentMode = 'normal' | 'zen';
+export type AgentMode = 'normal' | 'pulse';
 
 interface VoiceAgentContextType {
   isListening: boolean;
@@ -52,7 +52,7 @@ RULES:
 1. You are a NAVIGATOR and LESSON READER only. You do NOT teach new concepts from your own knowledge.
 2. When the user asks to go to a page, use the 'navigate' or 'openLesson' tool.
 3. When the user asks you to read or recite a lesson, use 'queryKnowledgeBase' to fetch the lesson article from the database and read it out loud to them word for word.
-4. If the user wants to explore topics not in the database, suggest they switch to Zen Mode for a deeper learning experience.
+4. If the user wants to explore topics not in the database, suggest they switch to PULSE for a deeper learning experience.
 5. Keep responses short and action-oriented. You are an assistant, not a teacher.
 
 Available commands:
@@ -65,9 +65,9 @@ Available commands:
 Be concise, helpful, and action-oriented.`;
 }
 
-function getZenSystemInstruction(userName: string, subjects: string[], currentTopic: string): string {
+function getPulseSystemInstruction(userName: string, subjects: string[], currentTopic: string): string {
   return `You are a world-class autonomous AI tutor for an educational platform called LearnHub. You can communicate in any language.
-You are operating in ZEN MODE — a distraction-free, immersive learning environment.
+You are operating in THE PULSE — a distraction-free, immersive learning environment where the interface has vanished. You are the heartbeat of the student's learning journey.
 
 Current Student Name: ${userName}
 ${subjects.length > 0 ? `Their curriculum subjects are: ${subjects.join(', ')}.` : ''}
@@ -90,9 +90,12 @@ CRITICAL BEHAVIOR:
 
 4. After finishing a topic, ask if they want to continue or switch topics.
 
-VISUAL AIDS: As you teach, autonomously decide when a visual aid is needed. Call 'generateVisualCanvas'. CRITICAL: for 'image_prompt', provide a SHORT 1-2 word search query (e.g., 'black hole', 'mitochondria').
+5. PLANNING LOOP (ReAct): At the start of a teaching session (after the user agrees to a topic), you MUST call 'planLesson' to define your roadmap (3-5 steps). This helps the user follow your autonomous reasoning.
 
-Be friendly, authoritative, and passionate about teaching. Speak naturally.`;
+VISUAL AIDS: As you teach, autonomously decide when a visual aid is needed. Call 'generateVisualCanvas' FREQUENTLY (at least once per teaching block). CRITICAL: for 'image_prompt', provide a SHORT 1-2 word search query (e.g., 'black hole', 'mitochondria').
+
+Be friendly, authoritative, and passionate about teaching. Speak naturally.
+When you call a tool, do NOT tell the user you are calling it. Just execute the action and respond as if it happened naturally.`;
 }
 
 // =============================================================================
@@ -155,12 +158,12 @@ export const VoiceAgentProvider: React.FC<VoiceAgentProviderProps> = ({
     const userName = user?.name || 'Student';
     const currentTopic = user?.currentTopic || 'Introduction and Onboarding';
 
-    const systemInstruction = agentMode === 'zen'
-      ? getZenSystemInstruction(userName, subjectNames, currentTopic)
+    const systemInstruction = agentMode === 'pulse'
+      ? getPulseSystemInstruction(userName, subjectNames, currentTopic)
       : getNormalSystemInstruction(userName, subjectNames);
 
-    // Normal mode: only navigation + KB query tools. Zen mode: full toolset.
-    const activeTools = agentMode === 'zen'
+    // Normal mode: only navigation + KB query tools. Pulse mode: full toolset.
+    const activeTools = agentMode === 'pulse'
       ? toolDeclarations
       : toolDeclarations.filter(t =>
         ['navigate', 'openLesson', 'lessonControl', 'listSubjects', 'listChapters',
@@ -175,9 +178,9 @@ export const VoiceAgentProvider: React.FC<VoiceAgentProviderProps> = ({
         automaticActivityDetection: {
           disabled: false,
           startOfSpeechSensitivity: StartSensitivity.START_SENSITIVITY_LOW,
-          endOfSpeechSensitivity: EndSensitivity.END_SENSITIVITY_LOW,
+          endOfSpeechSensitivity: EndSensitivity.END_SENSITIVITY_HIGH,
           prefixPaddingMs: 100,
-          silenceDurationMs: 500,
+          silenceDurationMs: 2000,
         },
       },
       tools: [
@@ -205,24 +208,15 @@ export const VoiceAgentProvider: React.FC<VoiceAgentProviderProps> = ({
       }
     };
 
-    const onAudio = (data: ArrayBuffer) => {
-      console.log('[Voice Agent] Audio received from Gemini:', {
-        size: data.byteLength,
-        bytes: data.byteLength,
-      });
-    };
-
     const onError = (error: ErrorEvent) => {
       setError(error.message || 'Gemini Live API error');
     };
 
-    client.on('toolcall', onToolCall);
-    client.on('audio', onAudio);
+    client.on('toolcall', onToolCall)
     client.on('error', onError);
 
     return () => {
       client.off('toolcall', onToolCall)
-      client.off('audio', onAudio);
       client.off('error', onError);
     };
   }, [client, commandExecutor]);
@@ -281,11 +275,11 @@ export const VoiceAgentProvider: React.FC<VoiceAgentProviderProps> = ({
       if (client.status === 'connected' && !hasGreetedRef.current) {
         hasGreetedRef.current = true;
 
-        if (agentMode === 'zen') {
+        if (agentMode === 'pulse') {
           const topicContext = user?.currentTopic
-            ? `My current curriculum topic is ${user.currentTopic}.`
-            : "I don't have a specific topic assigned yet.";
-          client.send([{ text: `Hi, I just entered Zen Mode. Give me a proactive welcome! ${topicContext} Greet me, tell me my topic, and ask if I want to continue with it or learn something new.` }]);
+            ? `We are currently discussing ${user.currentTopic}.`
+            : "We haven't started a specific topic yet.";
+          client.send([{ text: `Hi, I just entered Pulse. Give me a proactive welcome! ${topicContext} Greet me, tell me my topic, and ask if I want to continue with it or learn something new.` }]);
         } else {
           client.send([{ text: `Hi! I need help navigating LearnHub. Let me know what you can do for me.` }]);
         }
