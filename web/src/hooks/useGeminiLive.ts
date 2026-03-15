@@ -104,10 +104,16 @@ export function useGeminiLive(): UseLiveAPIResults {
     };
 
     const onAudio = (data: ArrayBuffer) => {
-      audioStreamerRef.current?.addPCM16(new Uint8Array(data));
+      if (audioStreamerRef.current) {
+        if (audioStreamerRef.current.context.state === 'suspended') {
+          audioStreamerRef.current.context.resume();
+        }
+        audioStreamerRef.current.addPCM16(new Uint8Array(data));
+      }
     };
 
     const onSetupComplete = () => {
+      console.log("[Gemini Live Hook] ✅ Setup complete");
       setSetupComplete(true);
     };
 

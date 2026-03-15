@@ -76,6 +76,52 @@ router.get("/stats", isAuthenticated, async (req, res) => {
     }
 });
 
+// Get the most recent completion to enable "Resume Learning"
+router.get("/recent", isAuthenticated, async (req, res) => {
+    try {
+        const userId = (req.user as any).id;
+
+        const latestCompletion = await db.query.lessonCompletions.findFirst({
+            where: eq(lessonCompletions.userId, userId),
+            orderBy: (completions, { desc }) => [desc(completions.completedAt)],
+            with: {
+                lesson: {
+                    with: {
+                        chapter: {
+                            with: {
+                                gradeSubject: {
+                                    with: {
+                                        subject: true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        if (!latestCompletion) {
+            return res.json({ found: false });
+        }
+
+        res.json({
+            found: true,
+            lessonId: latestCompletion.lessonId,
+            microsectionId: latestCompletion.microsectionId,
+            lessonSlug: latestCompletion.lesson?.slug,
+            chapterSlug: latestCompletion.lesson?.chapter?.slug,
+            subjectSlug: latestCompletion.lesson?.chapter?.gradeSubject?.subject?.slug,
+            classId: latestCompletion.lesson?.chapter?.gradeSubject?.classId,
+            title: latestCompletion.lesson?.title,
+            completedAt: latestCompletion.completedAt
+        });
+    } catch (error) {
+        console.error("Error fetching recent progress:", error);
+        res.status(500).json({ error: "Failed to fetch recent progress" });
+    }
+});
+
 // Mark a lesson as complete
 router.post("/complete", isAuthenticated, async (req, res) => {
     try {

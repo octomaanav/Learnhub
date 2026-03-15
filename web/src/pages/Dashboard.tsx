@@ -5,24 +5,20 @@ import {
   Sparkles,
   BookOpen,
   Settings,
-  HelpCircle,
   Plus,
   Rocket,
   Bookmark,
   BarChart3,
   Sun,
   Moon,
-  Mic,
   ChevronRight,
-  LogOut,
-  Menu,
-  X
+  ChevronLeft,
+  LogOut
 } from 'lucide-react';
 import type { SubjectWithChapters } from '../types';
 import { fetchSubjectsWithChapters, fetchCurriculumBySlug } from '../data/curriculumData';
 import { useI18n } from '../components/i18n/useI18n';
 import { useLanguage } from '../components/i18n/LanguageProvider';
-import { useVoiceAgent } from '../components/VoiceAgentProvider';
 import { apiUrl } from '../utils/api';
 
 function Dashboard() {
@@ -35,11 +31,8 @@ function Dashboard() {
   const [subjectsWithChapters, setSubjectsWithChapters] = useState<SubjectWithChapters[]>([]);
   const [knowledgeHubSubjects, setKnowledgeHubSubjects] = useState<SubjectWithChapters[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
-  const [isPulseMode, setIsPulseMode] = useState(false);
   const [viewMode, setViewMode] = useState<'curriculum' | 'knowledge_hub'>('curriculum');
   const [activeTab, setActiveTab] = useState<'subjects' | 'progress' | 'bookmarks'>('subjects');
-  const [visualState, setVisualState] = useState<{ description: string, type: string, mermaidCode?: string } | null>(null);
-  const [lessonPlan, setLessonPlan] = useState<{ topic: string, steps: string[] } | null>(null);
 
   // Stats and Bookmarks State
   const [progressStats, setProgressStats] = useState<{ completedCount: number, subjectStats?: any[] } | null>(null);
@@ -47,15 +40,14 @@ function Dashboard() {
   const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [isLoadingBookmarks, setIsLoadingBookmarks] = useState(false);
 
-  const { startListening, stopListening, setAgentMode, isListening } = useVoiceAgent();
   const { toggleTheme, theme, logout } = useAuth();
   const profileRef = useRef<HTMLDivElement>(null);
 
   // Profile Dropdown State
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-  // Responsive Sidebar State
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  // Responsive Sidebar State — default open on desktop
+  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 1024);
 
   // Telegram Linking State
   const [isTelegramModalOpen, setIsTelegramModalOpen] = useState(false);
@@ -111,7 +103,9 @@ function Dashboard() {
       .catch(console.error);
   }, [language]);
 
-  const activeSubjects = viewMode === 'curriculum' ? subjectsWithChapters : knowledgeHubSubjects;
+  const activeSubjects = viewMode === 'curriculum'
+    ? subjectsWithChapters.filter(s => s.slug !== 'chess') // Basic filter for school subjects
+    : knowledgeHubSubjects;
 
   // Auto-select first subject based on active mode
   useEffect(() => {
@@ -155,37 +149,6 @@ function Dashboard() {
 
   // Get chapters for selected subject directly in render
   // const chapters = selectedSubject?.chapters || []; // Removed unused local variable
-
-  // Listen for visual canvas updates from VoiceAgentProvider
-  useEffect(() => {
-    const handleVisualUpdate = (e: any) => {
-      setVisualState(e.detail);
-    };
-    const handlePlanUpdate = (e: any) => {
-      setLessonPlan(e.detail);
-    };
-    window.addEventListener('visual-canvas-update', handleVisualUpdate);
-    window.addEventListener('lesson-plan-update', handlePlanUpdate);
-    return () => {
-      window.removeEventListener('visual-canvas-update', handleVisualUpdate);
-      window.removeEventListener('lesson-plan-update', handlePlanUpdate);
-    };
-  }, []);
-
-  // Trigger voice agent on Pulse toggle
-  useEffect(() => {
-    if (isPulseMode) {
-      setAgentMode('pulse');
-      // Small delay so the config updates before we connect
-      const timer = setTimeout(() => startListening(), 200);
-      return () => clearTimeout(timer);
-    } else {
-      stopListening();
-      setAgentMode('normal');
-      setLessonPlan(null); // Reset plan on exit
-      setVisualState(null); // Reset visuals on exit
-    }
-  }, [isPulseMode, startListening, stopListening, setAgentMode]);
 
   // Handle click outside profile dropdown
   useEffect(() => {
@@ -270,8 +233,18 @@ function Dashboard() {
         />
       )}
 
-      {/* Sidebar */}
-      <aside className={`fixed lg:static inset-y-0 left-0 w-72 bg-surface-100 border-r border-surface-200 flex flex-col z-50 transform transition-transform duration-300 ease-in-out h-full overflow-hidden ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      {/* Sidebar toggle when closed: arrow on screen edge (all breakpoints) */}
+      <button
+        onClick={() => setIsSidebarOpen(true)}
+        className={`fixed top-4 left-2 z-50 p-2 rounded-full bg-surface-100 border border-surface-200 text-surface-600 hover:text-surface-800 hover:bg-surface-200 shadow-sm transition-all focus-mode-hide ${isSidebarOpen ? 'hidden' : ''
+          }`}
+        aria-label="Open sidebar"
+      >
+        <ChevronRight className="w-4 h-4" />
+      </button>
+
+      {/* Sidebar — responds to isSidebarOpen on ALL screen sizes */}
+      <aside className={`fixed inset-y-0 left-0 w-72 bg-surface-100 border-r border-surface-200 flex flex-col z-50 transform transition-transform duration-300 ease-in-out h-full overflow-hidden focus-mode-hide ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}>
         <div className="p-6 flex flex-col flex-1 min-h-0">
           <div className="flex items-center justify-between mb-10 shrink-0">
@@ -281,11 +254,13 @@ function Dashboard() {
               </div>
               <span className="text-xl font-black text-surface-900 font-display transition-colors">LearnHub</span>
             </div>
+            {/* Sidebar toggle when open: arrow in top-right of sidebar (all screens) */}
             <button
               onClick={() => setIsSidebarOpen(false)}
-              className="lg:hidden p-2 text-surface-400 hover:text-surface-600 transition-colors"
+              className="p-2 rounded-full bg-surface-100 border border-surface-200 text-surface-500 hover:text-surface-700 hover:bg-surface-200 shadow-sm"
+              aria-label="Close sidebar"
             >
-              <X className="w-6 h-6" />
+              <ChevronLeft className="w-4 h-4" />
             </button>
           </div>
 
@@ -399,16 +374,8 @@ function Dashboard() {
 
         {/* Sidebar Footer */}
         <div className="mt-auto p-6 space-y-4 border-t border-surface-200 shrink-0 bg-surface-100">
-          <button className="w-full flex items-center gap-3 text-surface-500 font-bold text-sm">
-            <HelpCircle className="w-5 h-5 opacity-60" />
-            Learning Guide
-          </button>
-          <button className="w-full flex items-center gap-3 text-surface-500 font-bold text-sm text-left">
-            <Settings className="w-5 h-5 opacity-60" />
-            Settings
-          </button>
 
-          <div className="relative pt-4 border-t border-surface-200" ref={profileRef}>
+          <div className="relative" ref={profileRef}>
             {isProfileOpen && (
               <div className="absolute bottom-full left-0 mb-4 w-full bg-surface-100 rounded-[1.5rem] shadow-2xl border border-surface-200 py-2 animate-in slide-in-from-bottom-2 duration-200 z-50">
                 <button
@@ -435,7 +402,7 @@ function Dashboard() {
 
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all ${isProfileOpen ? 'bg-surface-200 ring-2 ring-primary-500/20' : 'hover:bg-surface-200'}`}
+              className={`w-full flex items-center gap-3 rounded-2xl transition-all ${isProfileOpen ? 'bg-surface-200 ring-2 ring-primary-500/20' : 'hover:bg-surface-200'}`}
             >
               <div className="w-10 h-10 bg-primary-500/10 rounded-xl flex items-center justify-center text-primary-600 font-bold shrink-0 shadow-inner">
                 {user.name?.charAt(0).toUpperCase()}
@@ -449,17 +416,10 @@ function Dashboard() {
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-surface-50">
+      {/* Main Content — offset by sidebar width when open */}
+      <main className={`flex-1 flex flex-col min-w-0 overflow-hidden bg-surface-50 transition-[margin] duration-300 ease-in-out ${isSidebarOpen ? 'ml-72' : 'ml-0'}`}>
         {/* Top Bar */}
         <header className="h-20 bg-surface-100/80 backdrop-blur-sm px-4 sm:px-8 flex items-center justify-between z-10 border-b border-surface-200">
-          <button
-            onClick={() => setIsSidebarOpen(true)}
-            className="lg:hidden p-2.5 rounded-xl bg-surface-100 border border-surface-200 text-surface-600 mr-4 shadow-sm"
-          >
-            <Menu className="w-6 h-6" />
-          </button>
-
           <div className="flex-1 flex justify-center lg:pl-32">
             <div className="bg-surface-200/80 p-1 rounded-2xl flex gap-1 transform scale-90 sm:scale-100">
               <button
@@ -481,13 +441,7 @@ function Dashboard() {
 
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setIsPulseMode(true)}
-              className="hidden sm:flex p-2.5 rounded-full bg-surface-200 text-surface-600 hover:bg-surface-300"
-            >
-              <Mic className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setIsPulseMode(true)}
+              onClick={() => navigate('/pulse')}
               className="px-4 sm:px-5 py-2 sm:py-2.5 bg-primary-500 text-white font-bold rounded-xl shadow-lg shadow-primary-500/20 hover:bg-primary-600 transition-all flex items-center gap-2 text-xs sm:text-sm"
             >
               <Sparkles className="w-4 h-4" />
@@ -653,151 +607,6 @@ function Dashboard() {
           )}
         </div>
 
-        {/* Zen Mode Overlay (Pulse) */}
-        {isPulseMode && (
-          <div className="fixed inset-0 bg-[#0B0F19] z-[100] flex animate-in fade-in duration-700">
-            {/* Dynamic Backdrop */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary-500/30 blur-[120px] rounded-full animate-pulse" />
-              <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-blue-500/20 blur-[100px] rounded-full animate-float" />
-            </div>
-
-            <div className="relative flex w-full h-full p-6 sm:p-12 gap-8 z-10">
-              {/* Left Column: Lesson Roadmap */}
-              <div className="hidden lg:flex flex-col w-[320px] h-full animate-in slide-in-from-left duration-700">
-                <div className="bg-surface-900/40 backdrop-blur-2xl border border-white/5 rounded-[2.5rem] p-8 h-full flex flex-col shadow-2xl">
-                  <div className="w-12 h-12 bg-primary-500/10 rounded-2xl flex items-center justify-center text-primary-400 mb-8">
-                    <BookOpen className="w-6 h-6" />
-                  </div>
-
-                  <h3 className="text-xl font-black text-surface-50 uppercase tracking-widest mb-2">Lesson Roadmap</h3>
-                  <p className="text-surface-400 text-sm font-bold mb-10 leading-relaxed uppercase tracking-wider">
-                    {lessonPlan?.topic || "Discovering insights..."}
-                  </p>
-
-                  <div className="flex-1 space-y-6">
-                    {lessonPlan ? (
-                      lessonPlan.steps.map((step, idx) => (
-                        <div key={idx} className="flex gap-4 group">
-                          <div className="flex flex-col items-center">
-                            <div className="w-8 h-8 rounded-full border-2 border-primary-500/30 flex items-center justify-center text-xs font-black text-primary-400 group-hover:bg-primary-500 group-hover:text-white transition-all shrink-0">
-                              {idx + 1}
-                            </div>
-                            {idx < lessonPlan.steps.length - 1 && (
-                              <div className="w-0.5 flex-1 bg-gradient-to-b from-primary-500/30 to-transparent my-2" />
-                            )}
-                          </div>
-                          <p className="text-surface-200 font-bold text-sm leading-tight mt-1 group-hover:text-white transition-colors capitalize">
-                            {step}
-                          </p>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="space-y-6 opacity-40">
-                        {[1, 2, 3, 4].map(idx => (
-                          <div key={idx} className="flex gap-4 animate-pulse">
-                            <div className="w-8 h-8 rounded-full bg-surface-800 shrink-0" />
-                            <div className="h-4 bg-surface-800 rounded w-full mt-2" />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="mt-8 p-4 bg-primary-500/5 rounded-2xl border border-primary-500/10">
-                    <p className="text-[10px] font-black text-primary-400 uppercase tracking-widest leading-loose">
-                      Listening for questions...
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Column: Visual Canvas & Status */}
-              <div className="flex-1 flex flex-col h-full gap-8">
-                {/* Header Status */}
-                <div className="flex items-center justify-between animate-in slide-in-from-top duration-700">
-                  <div className="flex items-center gap-4">
-                    <div className="flex gap-1 h-6 items-center">
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <div
-                          key={i}
-                          className={`w-1 rounded-full bg-primary-500 ${isListening ? 'animate-bounce' : 'h-1 opacity-30'}`}
-                          style={{
-                            height: isListening ? `${20 + (i % 3) * 30}%` : '4px',
-                            animationDelay: `${i * 0.15}s`
-                          }}
-                        />
-                      ))}
-                    </div>
-                    <span className="text-surface-50 font-black text-sm uppercase tracking-[0.2em]">Zen Mode Active</span>
-                  </div>
-
-                  <button
-                    onClick={() => setIsPulseMode(false)}
-                    className="p-4 bg-surface-900/40 backdrop-blur-xl border border-white/10 rounded-2xl text-surface-400 hover:text-white hover:bg-surface-800 transition-all flex items-center gap-3 font-bold group"
-                  >
-                    <span className="text-xs uppercase tracking-widest hidden sm:inline">Return to Dashboard</span>
-                    <LogOut className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-                  </button>
-                </div>
-
-                {/* Main Visual Board */}
-                <div className="flex-1 bg-surface-900/40 backdrop-blur-2xl border border-white/5 rounded-[3rem] shadow-2xl relative overflow-hidden group">
-                  {visualState ? (
-                    <div className="absolute inset-0 p-8 sm:p-12 flex flex-col animate-in zoom-in duration-500">
-                      <div className="flex justify-between items-start mb-8">
-                        <div className="px-4 py-2 bg-primary-500/10 border border-primary-500/20 rounded-xl">
-                          <span className="text-[10px] font-black text-primary-400 uppercase tracking-[0.2em]">Visual Synthesis</span>
-                        </div>
-                        <p className="text-surface-400 text-xs font-bold uppercase tracking-widest max-w-[200px] text-right">
-                          {visualState.description}
-                        </p>
-                      </div>
-                      <div className="flex-1 flex items-center justify-center min-h-0">
-                        {visualState.type === 'image_prompt' ? (
-                          <img
-                            src={apiUrl(`/api/story/diagram?q=${encodeURIComponent(visualState.description)}`)}
-                            className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl animate-in fade-in zoom-in duration-700"
-                            alt={visualState.description}
-                          />
-                        ) : (
-                          <pre className="text-left font-mono text-xs sm:text-sm text-primary-400 bg-[#0B0F19] p-8 rounded-[2rem] border border-primary-500/20 shadow-inner w-full h-full overflow-auto thin-scrollbar animate-in slide-in-from-bottom duration-700">
-                            {visualState.mermaidCode || visualState.description}
-                          </pre>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center p-12 text-center">
-                      <div className="relative mb-12">
-                        <div className="absolute inset-0 bg-primary-500 blur-3xl opacity-20 animate-pulse" />
-                        <Sparkles className="relative w-24 h-24 text-primary-500 animate-float" />
-                      </div>
-                      <h2 className="text-4xl sm:text-6xl font-black text-surface-50 mb-6 tracking-tight">Immersive Canvas</h2>
-                      <p className="text-surface-400 font-bold text-lg sm:text-xl max-w-xl mx-auto leading-relaxed">
-                        I will project diagrams, mental models, and illustrations here as we explore {user?.currentTopic || "your curriculum"}.
-                      </p>
-
-                      <div className="mt-12 flex items-center gap-3 px-6 py-3 bg-white/5 border border-white/10 rounded-full animate-pulse">
-                        <div className="w-2 h-2 rounded-full bg-green-500" />
-                        <span className="text-[10px] font-black text-surface-300 uppercase tracking-widest">Listening for voice Input</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Bottom Status / Transcript Hint */}
-                <div className="h-20 bg-surface-900/40 backdrop-blur-xl border border-white/5 rounded-[2rem] flex items-center px-10">
-                  <p className="text-surface-400 font-bold text-sm italic">
-                    {isListening
-                      ? "Voice conversation active. Speak naturally to ask questions or dive deeper..."
-                      : "Connecting to Gemini Live..."}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </main>
 
       {/* Telegram Modal Logic remains functional behind the UI */}

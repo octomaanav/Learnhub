@@ -56,6 +56,7 @@ export const UserSetupPage = () => {
   // UI state for expanded subjects
   const [expandedSubjects, setExpandedSubjects] = useState<Set<string>>(new Set());
 
+
   useEffect(() => {
     if (user?.profile?.language) {
       setSetupData(prev => ({
@@ -171,6 +172,67 @@ export const UserSetupPage = () => {
       chapterIds: []
     }));
   };
+
+  useEffect(() => {
+    const handleAgentAction = (e: any) => {
+      const { page, action, data } = e.detail;
+      if (page !== 'setup') return;
+
+      switch (action) {
+        case 'set_learning_path':
+          if (data.path) selectLearningPath(data.path);
+          break;
+        case 'select_curriculum':
+          if (data.id) {
+            selectCurriculum(data.id);
+            setTimeout(() => goToNextStep(), 500);
+          } else if (data.name) {
+            const found = curricula.find(c => c.name.toLowerCase().includes(data.name.toLowerCase()));
+            if (found) {
+              selectCurriculum(found.id);
+              setTimeout(() => goToNextStep(), 500);
+            }
+          }
+          break;
+        case 'select_grade':
+          if (data.id) {
+            selectGrade(data.id);
+            setTimeout(() => goToNextStep(), 500);
+          } else if (data.name) {
+            const found = availableGrades.find(g => g.name.toLowerCase().includes(data.name.toLowerCase()));
+            if (found) {
+              selectGrade(found.id);
+              setTimeout(() => goToNextStep(), 500);
+            }
+          }
+          break;
+        case 'toggle_subject':
+          if (data.id) toggleSubjectExpanded(data.id);
+          else if (data.name) {
+            const found = subjectsWithChapters.find(s => s.name.toLowerCase().includes(data.name.toLowerCase()));
+            if (found) toggleSubjectExpanded(found.id);
+          }
+          break;
+        case 'select_chapters':
+          if (data.subject_name) {
+            const subject = subjectsWithChapters.find(s => s.name.toLowerCase().includes(data.subject_name.toLowerCase()));
+            if (subject) toggleAllChaptersInSubject(subject);
+          } else if (data.chapter_ids) {
+            data.chapter_ids.forEach((id: string) => toggleChapter(id));
+          }
+          break;
+        case 'next_step':
+          goToNextStep();
+          break;
+        case 'submit_setup':
+          handleSubmit();
+          break;
+      }
+    };
+
+    window.addEventListener('page-action-triggered', handleAgentAction);
+    return () => window.removeEventListener('page-action-triggered', handleAgentAction);
+  }, [curricula, availableGrades, subjectsWithChapters, currentStepIndex]);
 
   const toggleSubjectExpanded = (subjectId: string) => {
     setExpandedSubjects(prev => {
@@ -339,19 +401,33 @@ export const UserSetupPage = () => {
       </div>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-6 py-12">
-        <div className="bg-surface-100 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-surface-200 overflow-hidden">
+      <main className="max-w-5xl mx-auto px-6 py-12 animate-in fade-in slide-in-from-bottom-6 duration-700">
+        <div className="bg-white dark:bg-surface-100 rounded-[3rem] shadow-[0_30px_100px_rgba(0,0,0,0.1)] border border-surface-200 overflow-hidden">
           {/* Step Header */}
-          <div className="bg-primary-500 px-8 py-8 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl animate-pulse" />
-            <h1 className="text-2xl font-black mb-1 font-display relative z-10">{STEPS[currentStepIndex].title}</h1>
-            <p className="text-primary-100 font-medium relative z-10">{STEPS[currentStepIndex].subtitle}</p>
+          <div className="bg-gradient-to-br from-primary-500 to-primary-600 px-10 py-12 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-[80px] animate-pulse" />
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary-400/20 rounded-full translate-y-1/2 -translate-x-1/2 blur-[60px]" />
+
+            <div className="relative z-10 flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-black mb-2 font-display tracking-tight">{STEPS[currentStepIndex].title}</h1>
+                <p className="text-primary-100 font-bold text-lg opacity-90">{STEPS[currentStepIndex].subtitle}</p>
+              </div>
+              <div className="hidden sm:flex w-20 h-20 bg-white/20 backdrop-blur-md rounded-[2rem] items-center justify-center text-4xl shadow-inner border border-white/20">
+                {currentStep === 'path' ? '🚀' : currentStep === 'curriculum' ? '🏫' : currentStep === 'grade' ? '🎓' : '📚'}
+              </div>
+            </div>
           </div>
 
           {/* Step Content */}
-          <div className="p-8">
-            <div className="mb-8 rounded-xl border border-surface-200 bg-surface-50 p-6 flex flex-col sm:flex-row gap-4 items-center justify-between">
-              <div className="text-sm font-bold text-surface-900 uppercase tracking-widest">{t('setup.preferences')}</div>
+          <div className="p-10">
+            <div className="mb-10 rounded-3xl border border-surface-200 bg-surface-50 p-8 flex flex-col sm:flex-row gap-6 items-center justify-between shadow-inner">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-primary-500/10 rounded-2xl flex items-center justify-center text-primary-600">
+                  <span className="text-xl">🌐</span>
+                </div>
+                <div className="text-sm font-black text-surface-900 uppercase tracking-widest">{t('setup.preferences')}</div>
+              </div>
               <div className="flex flex-wrap gap-3 items-center">
                 <label className="text-xs font-bold text-surface-400 uppercase tracking-widest">{t('controls.language')}</label>
                 <select
@@ -382,33 +458,33 @@ export const UserSetupPage = () => {
                 <p className="text-surface-600 mb-6 font-medium">
                   Select your preferred learning path.
                 </p>
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid md:grid-cols-2 gap-8">
                   <button
                     onClick={() => selectLearningPath('standard')}
-                    className={`p-8 rounded-2xl border-2 text-left transition-all group ${learningPath === 'standard'
-                      ? 'border-primary-500 bg-primary-50/30'
-                      : 'border-surface-200 hover:border-primary-300 hover:bg-surface-50'
+                    className={`p-10 rounded-[2.5rem] border-4 text-left transition-all group relative overflow-hidden btn-3d ${learningPath === 'standard'
+                      ? 'border-primary-500 bg-primary-50/50 shadow-[0_8px_0_0_rgba(88,204,2,0.3)]'
+                      : 'border-surface-200 hover:border-primary-300 hover:bg-surface-50 shadow-[0_8px_0_0_rgba(226,232,240,1)]'
                       }`}
                   >
-                    <div className="w-12 h-12 bg-primary-500/10 rounded-xl flex items-center justify-center text-primary-600 mb-6 group-hover:scale-110 transition-transform">
+                    <div className="w-16 h-16 bg-primary-500/10 rounded-2xl flex items-center justify-center text-3xl mb-8 group-hover:scale-110 transition-transform shadow-inner">
                       📖
                     </div>
-                    <h3 className="font-bold text-xl text-surface-900 mb-2">School Curriculum</h3>
-                    <p className="text-sm text-surface-500 leading-relaxed">Follow your school board's curriculum (CBSE, ICSE, etc.) and master your academic subjects.</p>
+                    <h3 className="font-black text-2xl text-surface-900 mb-3 tracking-tight">School Curriculum</h3>
+                    <p className="text-base text-surface-500 font-bold leading-relaxed">Follow your school board's curriculum (CBSE, ICSE, etc.) and master your academic subjects.</p>
                   </button>
 
                   <button
                     onClick={() => selectLearningPath('knowledge_hub')}
-                    className={`p-8 rounded-2xl border-2 text-left transition-all group ${learningPath === 'knowledge_hub'
-                      ? 'border-primary-500 bg-primary-50/30'
-                      : 'border-surface-200 hover:border-primary-300 hover:bg-surface-50'
+                    className={`p-10 rounded-[2.5rem] border-4 text-left transition-all group relative overflow-hidden btn-3d ${learningPath === 'knowledge_hub'
+                      ? 'border-primary-500 bg-primary-50/50 shadow-[0_8px_0_0_rgba(88,204,2,0.3)]'
+                      : 'border-surface-200 hover:border-primary-300 hover:bg-surface-50 shadow-[0_8px_0_0_rgba(226,232,240,1)]'
                       }`}
                   >
-                    <div className="w-12 h-12 bg-primary-500/10 rounded-xl flex items-center justify-center text-primary-600 mb-6 group-hover:scale-110 transition-transform">
+                    <div className="w-16 h-16 bg-primary-500/10 rounded-2xl flex items-center justify-center text-3xl mb-8 group-hover:scale-110 transition-transform shadow-inner">
                       🌟
                     </div>
-                    <h3 className="font-bold text-xl text-surface-900 mb-2">Knowledge Hub</h3>
-                    <p className="text-sm text-surface-500 leading-relaxed">Learn anything you desire. Explore custom courses like Chess, Coding, or generate your own path.</p>
+                    <h3 className="font-black text-2xl text-surface-900 mb-3 tracking-tight">Knowledge Hub</h3>
+                    <p className="text-base text-surface-500 font-bold leading-relaxed">Learn anything you desire. Explore custom courses like Chess, Coding, or generate your own path.</p>
                   </button>
                 </div>
               </div>
@@ -420,18 +496,28 @@ export const UserSetupPage = () => {
                 <p className="text-surface-600 mb-6">
                   {t('setup.boardHint')}
                 </p>
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid md:grid-cols-2 gap-6">
                   {curricula.filter(c => c.slug !== 'knowledge-hub').map((curriculum) => (
                     <button
                       key={curriculum.id}
                       onClick={() => selectCurriculum(curriculum.id)}
-                      className={`p-6 rounded-xl border-2 text-left transition-all ${setupData.curriculumId === curriculum.id
-                        ? 'border-primary-500 bg-primary-50/30'
-                        : 'border-surface-200 hover:border-primary-300 hover:bg-surface-50'
+                      className={`p-8 rounded-[2rem] border-4 text-left transition-all btn-3d relative overflow-hidden ${setupData.curriculumId === curriculum.id
+                        ? 'border-primary-500 bg-primary-50/50 shadow-[0_8px_0_0_rgba(88,204,2,0.3)]'
+                        : 'border-surface-200 hover:border-primary-300 hover:bg-surface-50 shadow-[0_8px_0_0_rgba(226,232,240,1)]'
                         }`}
                     >
-                      <h3 className="font-bold text-lg text-surface-900 mb-2">{curriculum.name}</h3>
-                      <p className="text-sm text-surface-500">{curriculum.description}</p>
+                      <div className="flex justify-between items-start mb-6">
+                        <div className="w-12 h-12 bg-white dark:bg-surface-800 rounded-xl flex items-center justify-center shadow-inner text-xl">
+                          🏫
+                        </div>
+                        {setupData.curriculumId === curriculum.id && (
+                          <div className="w-6 h-6 bg-primary-500 rounded-full flex items-center justify-center text-white text-[10px] shadow-lg animate-in zoom-in">
+                            ✓
+                          </div>
+                        )}
+                      </div>
+                      <h3 className="font-black text-xl text-surface-900 mb-2 tracking-tight">{curriculum.name}</h3>
+                      <p className="text-sm text-surface-500 font-bold leading-relaxed">{curriculum.description}</p>
                     </button>
                   ))}
                 </div>
@@ -441,26 +527,37 @@ export const UserSetupPage = () => {
             {/* Step 2: Grade */}
             {currentStep === 'grade' && (
               <div className="space-y-4">
-                <p className="text-surface-600 mb-6 font-medium">
-                  {t('setup.gradeHint')}
-                </p>
-                {selectedCurriculum && (
-                  <div className="mb-4 p-4 bg-primary-500/10 rounded-xl border border-primary-500/20">
-                    <span className="font-bold text-primary-600 text-sm">{selectedCurriculum.name}</span>
+                <div className="mb-6 p-6 bg-primary-500/10 rounded-2xl border-2 border-primary-500/20 flex items-center gap-4 animate-in slide-in-from-left duration-500">
+                  <div className="w-10 h-10 bg-primary-500 rounded-xl flex items-center justify-center text-white shadow-lg">
+                    <span className="text-sm font-black">#</span>
                   </div>
-                )}
-                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[10px] font-black text-primary-600 uppercase tracking-widest leading-none mb-1">Current Board</p>
+                    <span className="font-bold text-surface-900 text-lg">{selectedCurriculum?.name}</span>
+                  </div>
+                </div>
+                <div className="grid md:grid-cols-2 gap-6">
                   {availableGrades.map((grade) => (
                     <button
                       key={grade.id}
                       onClick={() => selectGrade(grade.id)}
-                      className={`p-6 rounded-xl border-2 text-left transition-all ${setupData.classId === grade.id
-                        ? 'border-primary-500 bg-primary-50/30 shadow-md'
-                        : 'border-surface-200 hover:border-primary-300 hover:bg-surface-50'
+                      className={`p-8 rounded-[2rem] border-4 text-left transition-all btn-3d relative overflow-hidden ${setupData.classId === grade.id
+                        ? 'border-primary-500 bg-primary-50/50 shadow-[0_8px_0_0_rgba(88,204,2,0.3)]'
+                        : 'border-surface-200 hover:border-primary-300 hover:bg-surface-50 shadow-[0_8px_0_0_rgba(226,232,240,1)]'
                         }`}
                     >
-                      <h3 className="font-bold text-lg text-surface-900 mb-1">{grade.name}</h3>
-                      <p className="text-sm text-surface-500">{grade.description}</p>
+                      <div className="flex justify-between items-start mb-6">
+                        <div className="w-12 h-12 bg-white dark:bg-surface-800 rounded-xl flex items-center justify-center shadow-inner text-xl">
+                          🎓
+                        </div>
+                        {setupData.classId === grade.id && (
+                          <div className="w-6 h-6 bg-primary-500 rounded-full flex items-center justify-center text-white text-[10px] shadow-lg animate-in zoom-in">
+                            ✓
+                          </div>
+                        )}
+                      </div>
+                      <h3 className="font-black text-xl text-surface-900 mb-1 tracking-tight">{grade.name}</h3>
+                      <p className="text-sm text-surface-500 font-bold">{grade.description}</p>
                     </button>
                   ))}
                 </div>
@@ -473,12 +570,18 @@ export const UserSetupPage = () => {
                 <p className="text-surface-600 mb-6 font-medium">
                   {t('setup.chaptersHint')}
                 </p>
-                <div className="mb-4 p-4 bg-primary-500/10 rounded-xl border border-primary-500/20 flex items-center gap-2">
-                  <span className="font-bold text-primary-600 text-sm">{selectedCurriculum?.name}</span>
-                  <span className="text-surface-400">•</span>
-                  <span className="font-bold text-primary-600 text-sm">
-                    {availableGrades.find(g => g.id === setupData.classId)?.name}
-                  </span>
+                <div className="mb-8 p-6 bg-primary-500/10 rounded-[2rem] border-2 border-primary-500/20 flex flex-wrap items-center gap-6 animate-in slide-in-from-left duration-500">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center text-white text-xs font-black shadow-lg">B</div>
+                    <span className="font-bold text-surface-900">{selectedCurriculum?.name}</span>
+                  </div>
+                  <div className="hidden sm:block w-px h-6 bg-surface-200" />
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center text-white text-xs font-black shadow-lg">G</div>
+                    <span className="font-bold text-surface-900">
+                      {availableGrades.find(g => g.id === setupData.classId)?.name}
+                    </span>
+                  </div>
                 </div>
 
                 {isLoadingSubjects ? (
@@ -497,22 +600,25 @@ export const UserSetupPage = () => {
                         <div key={subject.id} className="border border-surface-200 rounded-2xl overflow-hidden mb-4">
                           {/* Subject Header */}
                           <div
-                            className={`p-5 flex items-center justify-between cursor-pointer transition-all ${selectedCount > 0 ? 'bg-primary-500/5' : 'bg-surface-50 hover:bg-surface-200'
+                            className={`p-6 flex items-center justify-between cursor-pointer transition-all ${selectedCount > 0 ? 'bg-primary-500/[0.03]' : 'bg-surface-50 hover:bg-surface-100'
                               }`}
                             onClick={() => toggleSubjectExpanded(subject.id)}
                           >
-                            <div className="flex items-center gap-3">
-                              <span className={`transform transition-transform ${isExpanded ? 'rotate-90' : ''}`}>
-                                ▶
-                              </span>
+                            <div className="flex items-center gap-4">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${isExpanded ? 'bg-surface-200 rotate-90' : 'bg-surface-100'}`}>
+                                <span className="text-[10px]">▶</span>
+                              </div>
                               <div className="flex flex-col">
-                                <h3 className="font-bold text-surface-900">{subject.name}</h3>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-[10px] font-bold text-surface-400 uppercase tracking-wider">{subject.chapters.length} chapters</span>
+                                <h3 className="font-black text-surface-900 tracking-tight">{subject.name}</h3>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-[10px] font-bold text-surface-400 uppercase tracking-[0.2em]">{subject.chapters.length} chapters</span>
                                   {selectedCount > 0 && (
-                                    <span className="text-[10px] font-black text-green-500 uppercase tracking-wider">
-                                      {selectedCount} selected
-                                    </span>
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                                      <span className="text-[10px] font-black text-green-500 uppercase tracking-widest">
+                                        {selectedCount} selected
+                                      </span>
+                                    </div>
                                   )}
                                 </div>
                               </div>
@@ -522,9 +628,9 @@ export const UserSetupPage = () => {
                                 e.stopPropagation();
                                 toggleAllChaptersInSubject(subject);
                               }}
-                              className={`px-4 py-2 text-xs font-black rounded-xl uppercase tracking-widest transition-all ${allSelected
-                                ? 'bg-green-500 text-white shadow-lg shadow-green-500/20'
-                                : 'bg-surface-200 text-surface-500 hover:bg-surface-300'
+                              className={`px-6 py-2.5 text-[10px] font-black rounded-2xl uppercase tracking-[0.2em] transition-all btn-3d ${allSelected
+                                ? 'bg-green-500 text-white shadow-[0_4px_0_0_rgba(34,197,94,0.3)]'
+                                : 'bg-surface-200 text-surface-500 hover:bg-surface-300 shadow-[0_4px_0_0_rgba(226,232,240,1)]'
                                 }`}
                             >
                               {allSelected ? 'Deselect All' : 'Select All'}
@@ -563,19 +669,21 @@ export const UserSetupPage = () => {
 
                 {/* Selected Summary */}
                 {setupData.chapterIds.length > 0 && (
-                  <div className="mt-8 p-6 bg-surface-50 rounded-2xl border border-surface-200">
-                    <p className="text-[10px] font-black text-surface-400 uppercase tracking-[0.2em] mb-4">
-                      Selected chapters ({setupData.chapterIds.length})
+                  <div className="mt-12 p-8 bg-surface-50 rounded-[2.5rem] border-4 border-surface-200 shadow-inner">
+                    <p className="text-[10px] font-black text-surface-400 uppercase tracking-[0.3em] mb-6 text-center">
+                      Onboarding Summary
                     </p>
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                       {getSelectedChaptersBySubject().map(({ subject, chapters }) => (
-                        <div key={subject.id} className="flex flex-wrap gap-2 items-center">
-                          <span className="text-xs font-black text-surface-600 uppercase tracking-wider">{subject.name}:</span>
-                          {chapters.map(c => (
-                            <span key={c.id} className="px-3 py-1 bg-green-500/10 text-green-600 rounded-lg text-[10px] font-black uppercase tracking-wider border border-green-500/20">
-                              {c.name}
-                            </span>
-                          ))}
+                        <div key={subject.id} className="flex flex-col gap-3">
+                          <span className="text-[10px] font-black text-surface-400 uppercase tracking-widest">{subject.name}</span>
+                          <div className="flex flex-wrap gap-2">
+                            {chapters.map(c => (
+                              <span key={c.id} className="px-5 py-2 bg-green-500/10 text-green-600 rounded-2xl text-[10px] font-black uppercase tracking-wider border-2 border-green-500/10 shadow-sm animate-in zoom-in">
+                                {c.name}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       ))}
                     </div>

@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { apiUrl, API_BASE } from '../utils/api';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useAccessibility } from '../components/accessibility/AccessibilityProvider';
+import { Wind } from 'lucide-react';
 import { MathText } from '../components/MathText';
 import AccessibilityToolbar from '../components/AccessibilityToolbar';
 import { useTextToSpeech } from '../hooks/useTextToSpeech';
@@ -458,7 +460,8 @@ export function MicrosectionPage() {
     microsectionId: string;
   }>();
 
-  useAuth(); // Still call to ensure authentication
+  useAuth();
+  const { focusMode, toggleFocusMode } = useAccessibility();
   const [data, setData] = useState<MicrosectionApiResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1133,6 +1136,13 @@ export function MicrosectionPage() {
                     <svg className={`w-5 h-5 ${isBookmarked ? 'fill-current' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                     </svg>
+                  </button>
+                  <button
+                    onClick={() => toggleFocusMode()}
+                    title={focusMode ? "Disable Zen Mode" : "Enable Zen Mode"}
+                    className={`p-1.5 rounded-lg transition-all ${focusMode ? 'bg-primary-500 text-white' : 'text-slate-300 hover:text-slate-400 hover:bg-slate-50'}`}
+                  >
+                    <Wind className="w-5 h-5" />
                   </button>
                   <button
                     onClick={toggleCompletion}

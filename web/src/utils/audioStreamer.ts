@@ -69,14 +69,14 @@ export class AudioStreamer {
    */
   private processPCM16Chunk(chunk: Uint8Array): Float32Array {
     const float32Array = new Float32Array(chunk.length / 2);
-    const dataView = new DataView(chunk.buffer);
+    const dataView = new DataView(chunk.buffer, chunk.byteOffset, chunk.byteLength);
 
     for (let i = 0; i < chunk.length / 2; i++) {
       try {
         const int16 = dataView.getInt16(i * 2, true);
         float32Array[i] = int16 / 32768;
       } catch (e) {
-        console.error("Error processing PCM16 chunk:", e);
+        console.error("[AudioStreamer] Error processing PCM16 chunk:", e);
       }
     }
     return float32Array;
@@ -86,6 +86,14 @@ export class AudioStreamer {
    * Add PCM16 audio chunk for playback
    */
   addPCM16(chunk: Uint8Array) {
+    if (this.context.state === 'suspended') {
+      this.context.resume().catch(e => console.error("[AudioStreamer] Resume error:", e));
+    }
+
+    // Ensure volume is up - cancel any ongoing ramp to 0 from stop()
+    this.gainNode.gain.cancelScheduledValues(this.context.currentTime);
+    this.gainNode.gain.setTargetAtTime(1, this.context.currentTime, 0.01);
+
     let processingBuffer = this.processPCM16Chunk(chunk);
 
     // Split into smaller buffers
@@ -102,6 +110,7 @@ export class AudioStreamer {
     if (!this.isPlaying) {
       this.isPlaying = true;
       this.scheduledTime = this.context.currentTime + this.initialBufferTime;
+      console.log(`[AudioStreamer] 🔈 Start playing. Context time: ${this.context.currentTime.toFixed(3)}, Scheduled: ${this.scheduledTime.toFixed(3)}, Queue: ${this.audioQueue.length}`);
       this.scheduleNextBuffer();
     }
   }
@@ -125,7 +134,7 @@ export class AudioStreamer {
       source.buffer = audioBuffer;
       source.connect(this.gainNode);
 
-      // Connect to worklets if any
+      // Connect to worklets if any (just for analysis, don't connect node to destination)
       const worklets = registeredWorklets.get(this.context);
       if (worklets) {
         Object.entries(worklets).forEach(([_workletName, graph]) => {
@@ -137,7 +146,7 @@ export class AudioStreamer {
                 handler.call(node.port, ev);
               });
             };
-            node.connect(this.context.destination);
+            // Note: node NOT connected to destination to avoid double routing or interference
           }
         });
       }
@@ -161,6 +170,20 @@ export class AudioStreamer {
         this.scheduledTime,
         this.context.currentTime
       );
+
+      // Check for silence/signal
+      let maxAmp = 0;
+      for (let i = 0; i < Math.min(audioData.length, 1000); i++) {
+        const abs = Math.abs(audioData[i]);
+        if (abs > maxAmp) maxAmp = abs;
+      }
+
+      if (maxAmp > 0) {
+        console.log(`[AudioStreamer] 🔊 SCHEDULING buffer: contextTime=${this.context.currentTime.toFixed(3)}, startTime=${startTime.toFixed(3)}, duration=${audioBuffer.duration.toFixed(3)}, maxAmp=${maxAmp.toFixed(4)}`);
+      } else {
+        console.warn(`[AudioStreamer] 🔈 SCHEDULING SILENT buffer: contextTime=${this.context.currentTime.toFixed(3)}, startTime=${startTime.toFixed(3)}`);
+      }
+
       source.start(startTime);
       this.scheduledTime = startTime + audioBuffer.duration;
     }
@@ -191,9 +214,8 @@ export class AudioStreamer {
       this.checkInterval = null;
     }
 
-    this.gainNode.gain.linearRampToValueAtTime(
-      0,
-      this.context.currentTime + 0.1
-    );
+    // Duck volume quickly
+    this.gainNode.gain.cancelScheduledValues(this.context.currentTime);
+    this.gainNode.gain.setTargetAtTime(0, this.context.currentTime, 0.05);
   }
 }

@@ -162,11 +162,11 @@ function AdminUploadPage() {
         <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 via-orange-600 to-red-600 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-secondary-600 rounded-xl flex items-center justify-center shadow-lg">
                 <span className="text-white text-base font-bold">🔧</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                <h1 className="text-xl font-bold text-surface-800">
                   Admin: Content Upload
                 </h1>
                 <p className="text-sm text-surface-500">Populate subject chapters from textbook PDFs</p>
@@ -175,7 +175,7 @@ function AdminUploadPage() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => navigate('/admin')}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-surface-600 hover:text-surface-800 hover:bg-surface-200 rounded-lg transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -184,7 +184,7 @@ function AdminUploadPage() {
               </button>
               <button
                 onClick={() => navigate('/admin/editor')}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                className="px-4 py-2 bg-secondary-600 text-white rounded-lg text-sm font-medium hover:bg-secondary-700"
               >
                 Manual Editor
               </button>
@@ -214,7 +214,7 @@ function AdminUploadPage() {
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
+          <div className="mb-6 p-4 bg-warning-50 border border-warning-200 rounded-xl text-warning-700">
             {error}
           </div>
         )}
@@ -364,8 +364,8 @@ function AdminUploadPage() {
                 ${isDragging
                   ? 'border-primary-500 bg-primary-50 scale-[1.02]'
                   : file
-                    ? 'border-accent-400 bg-accent-50'
-                    : 'border-surface-300 bg-white hover:border-primary-400 hover:bg-primary-50/50'
+                    ? 'border-primary-400 bg-primary-50'
+                    : 'border-surface-300 bg-surface-50 hover:border-primary-400 hover:bg-primary-50/50'
                 }
                 ${isUploading ? 'pointer-events-none opacity-60' : ''}
               `}
@@ -380,8 +380,8 @@ function AdminUploadPage() {
 
               {file ? (
                 <div className="space-y-4">
-                  <div className="w-16 h-16 mx-auto bg-accent-100 rounded-2xl flex items-center justify-center">
-                    <svg className="w-8 h-8 text-accent-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-16 h-16 mx-auto bg-primary-100 rounded-2xl flex items-center justify-center">
+                    <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </div>

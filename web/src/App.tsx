@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage';
 import SignUpPage from './pages/SignUpPage';
 import Dashboard from './pages/Dashboard';
 import CallPage from './pages/CallPage';
+import PulsePage from './pages/PulsePage';
 import UploadPage from './pages/UploadPage';
 import ChapterReviewPage from './pages/ChapterReviewPage';
 import ParseResultPage from './pages/ParseResultPage';
@@ -27,7 +28,7 @@ import { LanguageProvider } from './components/i18n/LanguageProvider';
 
 function AppInner() {
   const location = useLocation();
-  const showVoiceControls = location.pathname !== '/call';
+  const showVoiceControls = location.pathname !== '/call' && location.pathname !== '/pulse';
 
   return (
     <AccessibilityProvider>
@@ -41,6 +42,14 @@ function AppInner() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignUpPage />} />
                 <Route path="/call" element={<CallPage />} />
+                <Route
+                  path="/pulse"
+                  element={
+                    <ProtectedRoute requireSetup={true}>
+                      <PulsePage />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="/parse" element={<UploadPage />} />
                 <Route path="/parse/review" element={<ChapterReviewPage />} />
                 <Route path="/parse/result" element={<ParseResultPage />} />
