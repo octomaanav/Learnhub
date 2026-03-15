@@ -396,9 +396,9 @@ function AdminChapterReviewPage() {
     const totalLessons = importResult.chapters.reduce((acc, c) => acc + c.lessonCount, 0);
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-surface-50 via-accent-50/30 to-secondary-50/20 flex items-center justify-center p-6">
-        <div className="bg-white rounded-2xl border border-surface-200 p-8 max-w-lg w-full text-center shadow-lg">
-          <div className="w-20 h-20 mx-auto bg-gradient-to-br from-accent-400 to-accent-500 rounded-full flex items-center justify-center mb-6">
+      <div className="min-h-screen bg-surface-100 flex items-center justify-center p-6">
+        <div className="bg-surface-50 rounded-2xl border border-surface-200 p-8 max-w-lg w-full text-center shadow-lg">
+          <div className="w-20 h-20 mx-auto bg-gradient-to-br from-primary-400 to-primary-500 rounded-full flex items-center justify-center mb-6">
             <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
@@ -470,8 +470,8 @@ function AdminChapterReviewPage() {
         : 'Creating subjects, chapters, and lessons in the database...';
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-surface-50 via-primary-50/30 to-secondary-50/20 flex items-center justify-center p-6">
-        <div className="bg-white rounded-2xl border border-surface-200 p-8 max-w-md w-full text-center shadow-lg">
+      <div className="min-h-screen bg-surface-100 flex items-center justify-center p-6">
+        <div className="bg-surface-50 rounded-2xl border border-surface-200 p-8 max-w-md w-full text-center shadow-lg">
           <div className="w-16 h-16 mx-auto mb-6">
             <svg className="w-16 h-16 animate-spin text-primary-500" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -531,7 +531,7 @@ function AdminChapterReviewPage() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => navigate('/admin')}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-surface-600 hover:text-surface-800 hover:bg-surface-200 rounded-lg transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -558,11 +558,11 @@ function AdminChapterReviewPage() {
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-6 py-8">
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
+          <div className="mb-6 p-4 bg-warning-50 border border-warning-200 rounded-xl text-warning-700">
             {error}
             <button
               onClick={() => setError(null)}
-              className="ml-4 text-red-500 hover:text-red-700"
+              className="ml-4 text-warning-500 hover:text-warning-700"
             >
               Dismiss
             </button>
@@ -574,7 +574,7 @@ function AdminChapterReviewPage() {
           {chapters.map((chapter, chapterIdx) => (
             <div
               key={chapterIdx}
-              className="bg-white rounded-xl border border-surface-200 overflow-hidden shadow-sm"
+              className="bg-surface-50 rounded-xl border border-surface-200 overflow-hidden shadow-sm"
             >
               {/* Chapter Header */}
               <div
@@ -648,7 +648,7 @@ function AdminChapterReviewPage() {
                       {chapter.tocSections.map((section, sectionIdx) => (
                         <div
                           key={sectionIdx}
-                          className="flex items-center gap-3 p-3 bg-white rounded-lg border border-surface-200"
+                          className="flex items-center gap-3 p-3 bg-surface-50 rounded-lg border border-surface-200"
                         >
                           <span className="text-sm font-mono text-primary-600 w-12">
                             {section.sectionId}
@@ -723,7 +723,7 @@ function AdminChapterReviewPage() {
               px-10 py-4 rounded-xl font-semibold text-lg transition-all duration-200
               flex items-center gap-3
               ${chapters.length > 0
-                ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white hover:from-orange-600 hover:to-red-600 shadow-lg hover:shadow-xl'
+                ? 'bg-gradient-to-r from-primary-500 to-secondary-500 text-white hover:from-primary-600 hover:to-secondary-600 shadow-lg hover:shadow-xl'
                 : 'bg-surface-200 text-surface-400 cursor-not-allowed'
               }
             `}

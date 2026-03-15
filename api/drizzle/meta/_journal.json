@@ -22,6 +22,20 @@
       "when": 1773104566398,
       "tag": "0002_medical_hannibal_king",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1773358523329,
+      "tag": "0003_dazzling_sinister_six",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1773358546060,
+      "tag": "0004_bored_pepper_potts",
+      "breakpoints": true
     }
   ]
 }

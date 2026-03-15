@@ -12,25 +12,25 @@ const subjectData = [
   { slug: "chemistry", name: "Chemistry", description: "Study of substances and their properties" },
   { slug: "biology", name: "Biology", description: "Study of living organisms" },
   { slug: "science", name: "Science", description: "Combined Physics, Chemistry, and Biology" },
-  
+
   // Mathematics
   { slug: "mathematics", name: "Mathematics", description: "Study of numbers, quantities, and shapes" },
-  
+
   // Languages
   { slug: "english", name: "English", description: "Language and Literature" },
   { slug: "hindi", name: "Hindi", description: "Language and Literature" },
-  
+
   // Social Sciences
   { slug: "social-science", name: "Social Science", description: "History, Geography, Civics, Economics" },
   { slug: "history", name: "History", description: "World and Indian History" },
   { slug: "geography", name: "Geography", description: "Physical and Human Geography" },
   { slug: "political-science", name: "Political Science", description: "Government and Politics" },
   { slug: "economics", name: "Economics", description: "Micro and Macro Economics" },
-  
+
   // Commerce
   { slug: "accountancy", name: "Accountancy", description: "Financial and Corporate Accounting" },
   { slug: "business-studies", name: "Business Studies", description: "Business Management and Organization" },
-  
+
   // Other
   { slug: "computer-science", name: "Computer Science", description: "Programming, Data Structures" },
   { slug: "psychology", name: "Psychology", description: "Human Behavior and Mind" },
@@ -147,21 +147,21 @@ export async function seed() {
       .values(subjectData)
       .onConflictDoNothing()
       .returning();
-    
+
     const subjectMap = new Map<string, string>();
-    
+
     if (insertedSubjects.length === 0) {
       const existingSubjects = await db.select().from(subjects);
       existingSubjects.forEach(s => subjectMap.set(s.slug, s.id));
     } else {
       insertedSubjects.forEach(s => subjectMap.set(s.slug, s.id));
     }
-    
+
     console.log(`✅ ${subjectMap.size} subjects ready`);
 
     // 2. Insert curricula and classes
     console.log("🏫 Inserting curricula and classes...");
-    
+
     const classMap = new Map<string, string>();
 
     for (const curriculum of curriculumData) {
@@ -176,7 +176,7 @@ export async function seed() {
         .returning();
 
       let curriculumId = insertedCurriculum?.id;
-      
+
       if (!curriculumId) {
         const [existing] = await db
           .select()
@@ -210,7 +210,7 @@ export async function seed() {
         }
       }
     }
-    
+
     console.log(`✅ ${curriculumData.length} curricula with classes ready`);
 
     // Fetch existing classes if needed
@@ -223,7 +223,7 @@ export async function seed() {
         })
         .from(classes)
         .innerJoin(curricula, eq(curricula.id, classes.curriculumId));
-      
+
       existingClasses.forEach(c => {
         classMap.set(`${c.curriculumSlug}-${c.slug}`, c.id);
       });
@@ -231,7 +231,7 @@ export async function seed() {
 
     // 3. Insert class-subject mappings and track gradeSubject IDs
     console.log("🔗 Inserting class-subject mappings...");
-    
+
     const gradeSubjectMap = new Map<string, string>(); // "classId-subjectSlug" -> gradeSubjectId
 
     for (const [curriculumSlug, gradesMappings] of Object.entries(gradeSubjectMappings)) {
@@ -271,7 +271,7 @@ export async function seed() {
       })
       .from(gradeSubjects)
       .innerJoin(subjects, eq(subjects.id, gradeSubjects.subjectId));
-    
+
     existingGradeSubjects.forEach(gs => {
       gradeSubjectMap.set(`${gs.classId}-${gs.subjectSlug}`, gs.id);
     });
@@ -285,6 +285,10 @@ export async function seed() {
     try {
       const { seedLessons } = await import("./seedLessons.js");
       await seedLessons();
+
+      const { seedChessCourse } = await import("./seedChess.js");
+      await seedChessCourse();
+
       console.log("🎉 Complete seeding finished!");
     } catch (error) {
       console.error("❌ Lesson seeding failed:", error);

@@ -307,6 +307,34 @@ export const userChapters = pgTable("user_chapters", {
 }));
 
 // =============================================================================
+// USER_BOOKMARKS TABLE (Lessons saved by user)
+// =============================================================================
+
+export const userBookmarks = pgTable("user_bookmarks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  lessonId: uuid("lesson_id").references(() => lessons.id, { onDelete: "cascade" }).notNull(),
+  microsectionId: text("microsection_id"), // Optional: for microsections within a lesson
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueBookmarkPerUser: unique().on(table.userId, table.lessonId, table.microsectionId),
+}));
+
+// =============================================================================
+// LESSON_COMPLETIONS TABLE (Lessons finished by user)
+// =============================================================================
+
+export const lessonCompletions = pgTable("lesson_completions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  lessonId: uuid("lesson_id").references(() => lessons.id, { onDelete: "cascade" }).notNull(),
+  microsectionId: text("microsection_id"), // Optional: for microsections within a lesson
+  completedAt: timestamp("completed_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueCompletionPerUser: unique().on(table.userId, table.lessonId, table.microsectionId),
+}));
+
+// =============================================================================
 // RELATIONS
 // =============================================================================
 
@@ -347,11 +375,13 @@ export const chaptersRelations = relations(chapters, ({ one, many }) => ({
   userChapters: many(userChapters),
 }));
 
-export const lessonsRelations = relations(lessons, ({ one }) => ({
+export const lessonsRelations = relations(lessons, ({ one, many }) => ({
   chapter: one(chapters, {
     fields: [lessons.chapterId],
     references: [chapters.id],
   }),
+  bookmarks: many(userBookmarks),
+  completions: many(lessonCompletions),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -365,6 +395,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   }),
   userChapters: many(userChapters),
   scheduledReviews: many(scheduledReviews),
+  bookmarks: many(userBookmarks),
+  completions: many(lessonCompletions),
 }));
 
 export const userChaptersRelations = relations(userChapters, ({ one }) => ({
@@ -396,5 +428,27 @@ export const scheduledReviewsRelations = relations(scheduledReviews, ({ one }) =
   student: one(users, {
     fields: [scheduledReviews.studentId],
     references: [users.id],
+  }),
+}));
+
+export const userBookmarksRelations = relations(userBookmarks, ({ one }) => ({
+  user: one(users, {
+    fields: [userBookmarks.userId],
+    references: [users.id],
+  }),
+  lesson: one(lessons, {
+    fields: [userBookmarks.lessonId],
+    references: [lessons.id],
+  }),
+}));
+
+export const lessonCompletionsRelations = relations(lessonCompletions, ({ one }) => ({
+  user: one(users, {
+    fields: [lessonCompletions.userId],
+    references: [users.id],
+  }),
+  lesson: one(lessons, {
+    fields: [lessonCompletions.lessonId],
+    references: [lessons.id],
   }),
 }));

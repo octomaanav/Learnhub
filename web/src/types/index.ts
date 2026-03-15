@@ -39,6 +39,9 @@ export interface UseAuthReturn {
   isLoading: boolean;
   isAuthenticated: boolean;
   isProfileComplete: boolean;
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
+  logout: () => Promise<void>;
   error: string | null;
   refetch: () => Promise<void>;
 }
@@ -408,7 +411,7 @@ export interface Chapter {
 // SETUP PAGE TYPES
 // =============================================================================
 
-export type SetupStep = 'curriculum' | 'grade' | 'chapters';
+export type SetupStep = 'path' | 'curriculum' | 'grade' | 'chapters';
 
 export interface SetupStepInfo {
   id: SetupStep;

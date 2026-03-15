@@ -119,10 +119,6 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
   protected onopen() {
     this.log("client.open", "Connected");
     this.emit("open");
-
-    if (!this._session) {
-      console.error('[Gemini Live] Session is null after onopen!');
-    }
   }
 
   protected onerror(e: ErrorEvent) {
@@ -187,15 +183,10 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
           (p) => !(p.inlineData && p.inlineData.mimeType?.startsWith("audio/pcm"))
         );
 
-        base64s.forEach((b64, index) => {
+        base64s.forEach((b64) => {
           if (b64) {
             const data = base64ToArrayBuffer(b64);
-            console.log(`[Gemini Live] Emitting audio chunk ${index + 1}:`, {
-              size: data.byteLength,
-              bytes: data.byteLength,
-            });
             this.emit("audio", data);
-            this.log(`server.audio`, `buffer (${data.byteLength})`);
           }
         });
 
@@ -225,25 +216,10 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
       try {
         this._session.sendRealtimeInput({ media: ch });
       } catch (error: any) {
-        console.error('[Gemini Live] ❌ Error sending chunk:', {
-          error,
-          message: error?.message,
-          stack: error?.stack,
-          chunkMimeType: ch.mimeType,
-        });
+        console.error('[Gemini Live] Error sending chunk:', error?.message);
       }
     }
-    const hasAudio = chunks.some((ch) => ch.mimeType.includes("audio"));
-    const hasVideo = chunks.some((ch) => ch.mimeType.includes("image"));
-    const message =
-      hasAudio && hasVideo
-        ? "audio + video"
-        : hasAudio
-          ? "audio"
-          : hasVideo
-            ? "video"
-            : "unknown";
-    this.log(`client.realtimeInput`, message);
+    // Skip logging realtime input to avoid flooding the event bus
   }
 
   /**

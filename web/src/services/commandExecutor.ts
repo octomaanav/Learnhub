@@ -10,6 +10,7 @@ export interface CommandExecutorDependencies {
   navigate: NavigateFunction;
   user: User | null;
   availableSubjects: SubjectWithChapters[];
+  isPulseMode?: boolean;
 }
 
 export class CommandExecutor {
@@ -49,6 +50,11 @@ export class CommandExecutor {
           case 'navigate':
             success = await this.navigate(call.args.destination);
             result = { success, destination: call.args.destination };
+            break;
+
+          case 'resumeLearning':
+            success = await this.resumeLearning();
+            result = { success };
             break;
 
           case 'openLesson':
@@ -96,8 +102,23 @@ export class CommandExecutor {
             success = true;
             break;
 
+          case 'getCurrentLessonContent':
+            result = await this.getCurrentLessonContent();
+            success = true;
+            break;
+
           case 'generateVisualCanvas':
             success = this.generateVisualCanvas(call.args.description, call.args.type, call.args.mermaidCode);
+            result = { success };
+            break;
+
+          case 'executeAction':
+            success = this.executeAction(call.args.page, call.args.action, call.args.data);
+            result = { success, page: call.args.page, action: call.args.action };
+            break;
+
+          case 'planLesson':
+            success = this.planLesson(call.args.topic, call.args.steps);
             result = { success };
             break;
 
@@ -169,26 +190,63 @@ export class CommandExecutor {
         home: '/',
         setup: '/setup',
         'accessibility-guide': '/accessibility-guide',
+        admin: '/admin',
+        'admin-roadmap': '/admin/roadmap',
+        'admin-review': '/admin/review',
+        'admin-upload': '/admin/upload',
+        'admin-editor': '/admin/editor',
       };
 
       const normalizedDestination = destination?.toLowerCase().replace(/\s+/g, '-');
       const route = routes[destination] || routes[normalizedDestination];
-      if (route) {
-        this.deps.navigate(route);
+
+      if (!route) return false;
+
+      // In Pulse mode, block all navigation — content is rendered inline
+      if (this.deps.isPulseMode) {
+        console.log('[CommandExecutor] Pulse mode active — navigation blocked. Destination:', destination);
         return true;
       }
-      return false;
+
+      // Authorization check for admin routes
+      if (route.startsWith('/admin')) {
+        try {
+          const response = await fetch(apiUrl('/api/auth/admin-check'), {
+            credentials: 'include',
+          });
+          const data = await response.json();
+
+          if (!data.isAdmin) {
+            console.warn('[CommandExecutor] Unauthorized admin access attempt');
+            throw new Error('I tried navigating to the admin page but you are not authorized to view that page.');
+          }
+        } catch (e: any) {
+          if (e.message.includes('authorized')) throw e;
+          console.error('[CommandExecutor] Admin check failed:', e);
+          throw new Error('I encountered an error verifying your admin access.');
+        }
+      }
+
+      this.deps.navigate(route);
+      return true;
     } catch (error) {
       console.error('[CommandExecutor] Navigation error:', error);
-      return false;
+      throw error;
     }
   }
 
   /**
-   * Open a specific lesson by subject and chapter number
+   * Open a specific lesson by subject and optional chapter/lesson numbers.
+   * If numbers are omitted, defaults to the first chapter/lesson.
    */
-  private async openLesson(subjectName: string, chapterNumber: number, lessonNumber?: number, contentType?: string): Promise<boolean> {
+  private async openLesson(subjectName: string, chapterNumber?: number, lessonNumber?: number, contentType?: string): Promise<boolean> {
     try {
+      // In Pulse mode, don't navigate — teach from knowledge instead
+      if (this.deps.isPulseMode) {
+        console.log('[CommandExecutor] Pulse mode — openLesson blocked, use queryKnowledgeBase instead');
+        return true;
+      }
+
       if (!this.deps.user?.profile?.classId) {
         console.error('[CommandExecutor] No user profile');
         return false;
@@ -206,15 +264,18 @@ export class CommandExecutor {
         return false;
       }
 
+      // Default to chapter 1 if not specified
+      const targetChapterIndex = (chapterNumber && chapterNumber > 0) ? chapterNumber - 1 : 0;
+
       // Find chapter by number (sorted by sortOrder)
       const sortedChapters = [...subject.chapters].sort((a, b) =>
         (a.sortOrder || 0) - (b.sortOrder || 0)
       );
 
-      const chapter = sortedChapters[chapterNumber - 1];
+      const chapter = sortedChapters[targetChapterIndex];
 
       if (!chapter) {
-        console.error('[CommandExecutor] Chapter not found at index:', chapterNumber - 1);
+        console.error('[CommandExecutor] Chapter not found at index:', targetChapterIndex);
         return false;
       }
 
@@ -276,6 +337,45 @@ export class CommandExecutor {
       return true;
     } catch (error) {
       console.error('[CommandExecutor] Open lesson error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Resume learning where the user left off
+   */
+  private async resumeLearning(): Promise<boolean> {
+    try {
+      if (this.deps.isPulseMode) {
+        console.log('[CommandExecutor] Pulse mode — resumeLearning blocked');
+        return true;
+      }
+
+      console.log('[CommandExecutor] Resuming learning...');
+      const response = await fetch(apiUrl('/api/progress/recent'), {
+        credentials: 'include'
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch recent progress');
+      const data = await response.json();
+
+      if (data.found) {
+        const route = `/${data.classId}/${data.subjectSlug}/${data.chapterSlug}/${data.lessonSlug}${data.microsectionId ? '/' + data.microsectionId : ''}`;
+        console.log('[CommandExecutor] Resuming to:', route);
+        this.deps.navigate(route);
+        return true;
+      }
+
+      // Fallback: start from the first subject found
+      if (this.deps.availableSubjects.length > 0) {
+        const firstSubject = this.deps.availableSubjects[0];
+        return this.openLesson(firstSubject.name);
+      }
+
+      console.warn('[CommandExecutor] No progress found and no subjects available to resume.');
+      return false;
+    } catch (error) {
+      console.error('[CommandExecutor] Resume learning error:', error);
       return false;
     }
   }
@@ -411,9 +511,7 @@ export class CommandExecutor {
       console.log('[CommandExecutor] Autonomous agent is querying knowledge base for:', topic);
 
       const response = await fetch(apiUrl(`/api/lessons/knowledge-base/search?q=${encodeURIComponent(topic)}`), {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-        }
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -465,6 +563,110 @@ export class CommandExecutor {
     } catch (error) {
       console.error('[CommandExecutor] Failed to push visual:', error);
       return false;
+    }
+  }
+
+  /**
+   * Execute a specific UI action or fill out a form
+   */
+  private executeAction(page: string, action: string, data: Record<string, any>): boolean {
+    try {
+      console.log('[CommandExecutor] Agent triggering action:', action, 'on page:', page, 'with data:', data);
+      const event = new CustomEvent('page-action-triggered', {
+        detail: { page, action, data }
+      });
+      window.dispatchEvent(event);
+      return true;
+    } catch (error) {
+      console.error('[CommandExecutor] Failed to trigger action:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Plan a lesson session
+   */
+  private planLesson(topic: string, steps: string[]): boolean {
+    try {
+      console.log('[CommandExecutor] Agent planned a lesson:', topic, steps);
+      const event = new CustomEvent('lesson-plan-update', {
+        detail: { topic, steps }
+      });
+      window.dispatchEvent(event);
+      return true;
+    } catch (error) {
+      console.error('[CommandExecutor] Failed to plan lesson:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get content for the currently visible lesson (from URL)
+   */
+  private async getCurrentLessonContent(): Promise<Record<string, unknown>> {
+    try {
+      const path = window.location.pathname; // e.g. /classId/subject-slug/chapter-slug/section-slug/microsectionId
+      const parts = path.split('/').filter(Boolean);
+
+      // Pattern: /:classId/:subjectId/:chapterSlug/:sectionSlug/:microsectionId
+      if (parts.length < 5) {
+        return {
+          error: "No lesson currently active on screen. I can only 'read' if you are on a lesson page.",
+          current_path: path
+        };
+      }
+
+      const [classId, subjectId, chapterSlug, sectionSlug, microsectionId] = parts;
+
+      console.log(`[CommandExecutor] Fetching content for narration: ${path}`);
+
+      const response = await fetch(
+        apiUrl(`/api/lessons/structured/${classId}/${subjectId}/${chapterSlug}/${sectionSlug}/${microsectionId}`),
+        { credentials: 'include' }
+      );
+
+      if (!response.ok) {
+        return { error: "Failed to fetch lesson content from the server." };
+      }
+
+      const data = await response.json();
+      const microsection = data.microsection;
+
+      if (!microsection) {
+        return { error: "Microsection content not found." };
+      }
+
+      // Build a readable string for Gemini
+      let text = `Title: ${microsection.title}\n\n`;
+
+      if (microsection.type === 'article') {
+        const content = microsection.content;
+        if (content.introduction) text += `Introduction: ${content.introduction}\n\n`;
+
+        content.coreConcepts?.forEach((concept: any, i: number) => {
+          text += `Concept ${i + 1}: ${concept.conceptTitle}\n${concept.explanation}\n`;
+          if (concept.example) text += `Example: ${concept.example}\n`;
+          text += '\n';
+        });
+
+        if (content.summary?.length > 0) {
+          text += `Summary: ${content.summary.join('. ')}\n`;
+        }
+      } else if (microsection.type === 'quiz' || microsection.type === 'practice') {
+        text += `This is a ${microsection.type}. Content: ${microsection.content?.description || 'N/A'}`;
+      } else if (microsection.type === 'video') {
+        text += `This is a video lesson. Description: ${microsection.content?.description || 'N/A'}`;
+      }
+
+      return {
+        content: text,
+        context: { classId, subjectId, chapterSlug, sectionSlug, microsectionId },
+        instruction: "You have received the full text of the lesson currently on the user's screen. Narrate it naturally and engagingly as a world-class AI teacher. Do not just read it like a robot; bring the content to life!"
+      };
+
+    } catch (error) {
+      console.error('[CommandExecutor] getCurrentLessonContent error:', error);
+      return { error: "An error occurred while trying to read the screen content." };
     }
   }
 

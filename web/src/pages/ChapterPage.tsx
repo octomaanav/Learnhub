@@ -46,11 +46,36 @@ const getMicrosectionIcon = (type: MicrosectionType) => {
 
 const getMicrosectionColor = (type: MicrosectionType) => {
   switch (type) {
-    case 'article': return { bg: 'bg-blue-50', border: 'border-blue-200', icon: 'text-blue-600', hover: 'hover:bg-blue-100' };
-    case 'video': return { bg: 'bg-purple-50', border: 'border-purple-200', icon: 'text-purple-600', hover: 'hover:bg-purple-100' };
-    case 'quiz': return { bg: 'bg-green-50', border: 'border-green-200', icon: 'text-green-600', hover: 'hover:bg-green-100' };
-    case 'practice': return { bg: 'bg-amber-50', border: 'border-amber-200', icon: 'text-amber-600', hover: 'hover:bg-amber-100' };
-    default: return { bg: 'bg-slate-50', border: 'border-slate-200', icon: 'text-slate-600', hover: 'hover:bg-slate-100' };
+    case 'article': return {
+      bg: 'bg-primary-50/50 dark:bg-primary-900/10',
+      border: 'border-primary-100 dark:border-primary-800',
+      icon: 'text-primary-600 dark:text-primary-400',
+      hover: 'hover:bg-primary-100/50 dark:hover:bg-primary-900/20'
+    };
+    case 'video': return {
+      bg: 'bg-purple-50/50 dark:bg-purple-900/10',
+      border: 'border-purple-100 dark:border-purple-800',
+      icon: 'text-purple-600 dark:text-purple-400',
+      hover: 'hover:bg-purple-100/50 dark:hover:bg-purple-900/20'
+    };
+    case 'quiz': return {
+      bg: 'bg-green-50/50 dark:bg-green-900/10',
+      border: 'border-green-100 dark:border-green-800',
+      icon: 'text-green-600 dark:text-green-400',
+      hover: 'hover:bg-green-100/50 dark:hover:bg-green-900/20'
+    };
+    case 'practice': return {
+      bg: 'bg-amber-50/50 dark:bg-amber-900/10',
+      border: 'border-amber-100 dark:border-amber-800',
+      icon: 'text-amber-600 dark:text-amber-400',
+      hover: 'hover:bg-amber-100/50 dark:hover:bg-amber-900/20'
+    };
+    default: return {
+      bg: 'bg-surface-50 dark:bg-surface-100/10',
+      border: 'border-surface-200 dark:border-surface-800',
+      icon: 'text-surface-600 dark:text-surface-400',
+      hover: 'hover:bg-surface-200/50 dark:hover:bg-surface-100/20'
+    };
   }
 };
 
@@ -185,10 +210,10 @@ export function ChapterPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-surface-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">{t('chapter.loading')}</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+          <p className="text-surface-600 font-bold">{t('chapter.loading')}</p>
         </div>
       </div>
     );
@@ -196,12 +221,12 @@ export function ChapterPage() {
 
   if (error || !chapter) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-surface-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600 mb-4">{error || 'Chapter not found'}</p>
+          <p className="text-red-600 font-bold mb-4">{error || 'Chapter not found'}</p>
           <button
             onClick={() => navigate('/dashboard')}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="px-6 py-2 bg-primary-500 text-white rounded-xl shadow-lg hover:bg-primary-600 transition-all font-bold"
           >
             Back to Dashboard
           </button>
@@ -213,25 +238,25 @@ export function ChapterPage() {
   const sections = [...chapter.sections].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-surface-50">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
+      <header className="bg-surface-100/80 backdrop-blur-sm border-b border-surface-200 sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-6 py-4">
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate('/dashboard')}
-              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-surface-200 rounded-lg transition-colors text-surface-600"
               aria-label="Back to dashboard"
             >
-              <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
             <div className="flex-1">
-              <p className="text-xs text-slate-500 uppercase tracking-wide mb-0.5">
+              <p className="text-[10px] font-black text-surface-500 uppercase tracking-widest mb-0.5">
                 {subjectId?.replace(/-/g, ' ')}
               </p>
-              <h1 className="font-bold text-lg text-slate-900">{chapter.chapterTitle}</h1>
+              <h1 className="font-black text-lg text-surface-900 uppercase tracking-tight">{chapter.chapterTitle}</h1>
             </div>
           </div>
         </div>
@@ -240,21 +265,21 @@ export function ChapterPage() {
       {/* Main Content */}
       <main className="max-w-5xl mx-auto px-6 py-8 focus-mode-surface">
         {/* Chapter Description */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-6 mb-8 text-white">
-          <h2 className="text-2xl font-bold mb-2">{chapter.chapterTitle}</h2>
-          <p className="text-blue-100">{chapter.chapterDescription}</p>
-          <div className="mt-4 flex items-center gap-4 text-sm">
-            <span className="bg-white/20 px-3 py-1 rounded-full">
+        <div className="bg-gradient-to-r from-primary-600 to-indigo-700 rounded-[2.5rem] p-8 mb-8 text-white shadow-xl shadow-primary-500/20">
+          <h2 className="text-3xl font-black mb-3 tracking-tight">{chapter.chapterTitle}</h2>
+          <p className="text-primary-100 font-bold leading-relaxed">{chapter.chapterDescription}</p>
+          <div className="mt-6 flex items-center gap-4 text-xs font-black uppercase tracking-widest">
+            <span className="bg-white/10 backdrop-blur-md border border-white/10 px-4 py-1.5 rounded-full">
               {sections.length} sections
             </span>
-            <span className="bg-white/20 px-3 py-1 rounded-full">
+            <span className="bg-white/10 backdrop-blur-md border border-white/10 px-4 py-1.5 rounded-full">
               {sections.reduce((sum, s) => sum + s.microsections.length, 0)} lessons
             </span>
           </div>
-          <div className="mt-4">
+          <div className="mt-6">
             <button
               onClick={openBrailleGuide}
-              className="px-4 py-2 rounded-lg bg-white/20 text-white border border-white/30 hover:bg-white/30 disabled:opacity-60"
+              className="px-5 py-2.5 rounded-xl bg-white/10 text-white border border-white/20 hover:bg-white/20 font-bold transition-all disabled:opacity-60"
               disabled={isBrailleLoading}
             >
               {t('chapter.brailleGuide')}
@@ -268,29 +293,29 @@ export function ChapterPage() {
             const isExpanded = expandedSections.has(section.id);
 
             return (
-              <div key={section.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+              <div key={section.id} className="bg-surface-100 rounded-[2rem] border border-surface-200 overflow-hidden shadow-sm transition-all hover:shadow-md">
                 {/* Section Header */}
                 <button
                   onClick={() => toggleSection(section.id)}
-                  className="w-full flex items-center justify-between p-5 hover:bg-slate-50 transition-colors"
+                  className="w-full flex items-center justify-between p-6 hover:bg-surface-200/50 transition-colors"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600 font-semibold text-sm">
+                    <div className="w-10 h-10 bg-surface-200 rounded-xl flex items-center justify-center text-surface-600 font-black text-sm">
                       {sectionIndex + 1}
                     </div>
                     <div className="text-left">
-                      <h3 className="font-semibold text-slate-900">{section.title}</h3>
+                      <h3 className="font-bold text-surface-900 tracking-tight">{section.title}</h3>
                       {section.description && (
-                        <p className="text-sm text-slate-500 mt-0.5">{section.description}</p>
+                        <p className="text-sm text-surface-500 font-bold mt-0.5">{section.description}</p>
                       )}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-xs text-slate-400">
+                    <span className="text-[10px] font-black text-surface-400 uppercase tracking-widest">
                       {section.microsections.length} items
                     </span>
                     <svg
-                      className={`w-5 h-5 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                      className={`w-5 h-5 text-surface-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -312,17 +337,17 @@ export function ChapterPage() {
                           onClick={() => handleMicrosectionClick(section, microsection)}
                           className={`w-full flex items-center gap-4 p-4 rounded-xl border ${typeColors.border} ${typeColors.bg} ${typeColors.hover} transition-all text-left`}
                         >
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${typeColors.icon} bg-white shadow-sm`}>
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${typeColors.icon} bg-surface-50 dark:bg-surface-200/50 shadow-sm`}>
                             {getMicrosectionIcon(microsection.type)}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-slate-900 truncate">{microsection.title}</h4>
+                            <h4 className="font-bold text-surface-900 truncate tracking-tight">{microsection.title}</h4>
                             <div className="flex items-center gap-2 mt-1">
-                              <span className={`text-xs ${typeColors.icon} font-medium`}>
+                              <span className={`text-[10px] uppercase tracking-widest ${typeColors.icon} font-black`}>
                                 {getMicrosectionLabel(microsection.type)}
                               </span>
                               {microsection.estimatedMinutes && (
-                                <span className="text-xs text-slate-400">
+                                <span className="text-[10px] font-black text-surface-400 uppercase tracking-widest">
                                   • {microsection.estimatedMinutes} min
                                 </span>
                               )}

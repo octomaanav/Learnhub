@@ -1,126 +1,128 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import {
+  LogOut,
+  Moon,
+  Sun,
+  ChevronDown,
+  Settings,
+  LayoutDashboard
+} from 'lucide-react';
 
-interface StudentProfile {
-  id: string;
-  name: string;
-  grade: string;
-  preferences: {
-    pace: 'slow' | 'medium' | 'fast';
-    verbosity: 'concise' | 'moderate' | 'detailed';
-  };
-}
-
-interface NavbarProps {
-  currentProfile: StudentProfile;
-  onProfileChange: (profile: StudentProfile) => void;
-  studentProfiles: StudentProfile[];
-}
-
-export const Navbar = ({ currentProfile, onProfileChange, studentProfiles }: NavbarProps) => {
+export const Navbar = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, logout, theme, toggleTheme } = useAuth();
   const navigate = useNavigate();
-  console.log('Navbar render - user:', user);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const handleProfileChange = (profileId: string) => {
-    const profile = studentProfiles.find(p => p.id === profileId);
-    if (profile) onProfileChange(profile);
-  };
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-  const handleSettingsClick = () => {
-    setIsUserMenuOpen(false);
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
   };
 
   return (
-    <header className="bg-white/80 backdrop-blur-md border-b border-primary-100/50 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-6 py-4">
+    <header className="bg-white dark:bg-surface-900 border-b border-slate-200 dark:border-surface-800 sticky top-0 z-50 transition-colors duration-300">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-primary-500 border-2 border-primary-600 rounded-2xl flex items-center justify-center shadow-[0_4px_0_0_var(--color-primary-600)] transform -rotate-3 hover:rotate-0 transition-transform">
-              <span className="text-white text-xl font-bold font-display">A</span>
+          {/* Logo */}
+          <Link to="/dashboard" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 bg-gradient-to-br from-[#069494] via-[#047c7c] to-[#035f5f] rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+              <span className="text-white text-base font-bold">L</span>
             </div>
-            <h1 className="text-2xl font-bold text-surface-800 font-display tracking-tight">
-              Learn<span className="text-primary-500">Hub</span>
-            </h1>
-          </div>
+            <span className="text-xl font-black bg-gradient-to-r from-[#047c7c] to-[#069494] bg-clip-text text-transparent dark:from-[#069494] dark:to-[#0bc5c5]">
+              LearnHub
+            </span>
+          </Link>
 
-          {/* Profile Info & Switcher */}
+          {/* Right Section */}
           <div className="flex items-center gap-4">
-            <div className="text-right mr-4">
-              <p className="text-sm font-semibold text-surface-900">{currentProfile.name}</p>
-              <p className="text-xs text-surface-600">
-                {currentProfile.grade} • Pace: {currentProfile.preferences.pace}
-              </p>
-            </div>
-
-            <select
-              aria-label="Switch Student Profile"
-              value={currentProfile.id}
-              onChange={(e) => handleProfileChange(e.target.value)}
-              className="px-4 py-2 bg-white border-2 border-surface-200 rounded-2xl font-bold text-surface-700 cursor-pointer shadow-[0_4px_0_0_var(--color-surface-200)] hover:bg-surface-50 active:translate-y-1 active:shadow-none transition-all outline-none focus-visible:ring-2 focus-visible:ring-secondary-500"
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2.5 rounded-xl bg-slate-100 dark:bg-surface-800 text-slate-600 dark:text-surface-400 hover:bg-slate-200 dark:hover:bg-surface-700 transition-all active:scale-95"
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             >
-              {studentProfiles.map(profile => (
-                <option key={profile.id} value={profile.id}>
-                  {profile.name}
-                </option>
-              ))}
-            </select>
+              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
 
-            {/* User Dropdown Menu */}
-            <div className="relative">
-              <button
-                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                aria-expanded={isUserMenuOpen}
-                aria-haspopup="true"
-                className="btn-3d btn-3d-secondary flex items-center gap-3 px-5 py-2.5 bg-secondary-500 text-white rounded-2xl border-2 border-secondary-600 font-bold hover:bg-secondary-400"
-              >
-                <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center">
-                  <span className="text-sm font-bold font-display">{user?.name?.charAt(0).toUpperCase() || 'U'}</span>
-                </div>
-                <span className="text-sm tracking-wide">{user?.name || 'User'}</span>
-                <svg
-                  className={`w-4 h-4 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+            {/* Profile Dropdown */}
+            {user && (
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all duration-200 ${isUserMenuOpen
+                    ? 'bg-slate-100 dark:bg-surface-800'
+                    : 'hover:bg-slate-50 dark:hover:bg-surface-800/50'
+                    }`}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
+                  <div className="w-9 h-9 bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg flex items-center justify-center shadow-sm">
+                    <span className="text-white text-sm font-bold">
+                      {user.name?.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="hidden sm:block text-left">
+                    <p className="text-sm font-bold text-slate-800 dark:text-surface-100 leading-none mb-1">
+                      {user.name}
+                    </p>
+                    <p className="text-[10px] font-bold text-slate-400 dark:text-surface-500 uppercase tracking-wider">
+                      Student
+                    </p>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${isUserMenuOpen ? 'rotate-180' : ''}`} />
+                </button>
 
-              {/* Dropdown Menu */}
-              {isUserMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-surface-200 py-2 z-50">
-                  <button
-                    onClick={() => {
-                      navigate('/');
-                      setIsUserMenuOpen(false);
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm text-surface-700 hover:bg-surface-50 flex items-center gap-2 transition-colors"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                    </svg>
-                    Homepage
-                  </button>
-                  <button
-                    onClick={handleSettingsClick}
-                    className="w-full text-left px-4 py-2 text-sm text-surface-700 hover:bg-surface-50 flex items-center gap-2 transition-colors"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    Settings
-                  </button>
-                </div>
-              )}
-            </div>
+                {/* Dropdown Menu */}
+                {isUserMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-surface-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-surface-700 py-2 z-50 animate-in fade-in slide-in-from-top-2">
+                    <div className="px-4 py-3 border-b border-slate-100 dark:border-surface-700 mb-2">
+                      <p className="text-xs font-bold text-slate-400 dark:text-surface-500 uppercase tracking-widest mb-1">Signed in as</p>
+                      <p className="text-sm font-bold text-slate-800 dark:text-surface-100 truncate">{user.email}</p>
+                    </div>
+
+                    <button
+                      onClick={() => { navigate('/dashboard'); setIsUserMenuOpen(false); }}
+                      className="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-600 dark:text-surface-300 hover:bg-slate-50 dark:hover:bg-surface-700/50 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-3 transition-colors"
+                    >
+                      <LayoutDashboard className="w-4 h-4" />
+                      Dashboard
+                    </button>
+
+                    <button
+                      onClick={() => { navigate('/setup'); setIsUserMenuOpen(false); }}
+                      className="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-600 dark:text-surface-300 hover:bg-slate-50 dark:hover:bg-surface-700/50 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-3 transition-colors"
+                    >
+                      <Settings className="w-4 h-4" />
+                      Preferences
+                    </button>
+
+                    <div className="h-px bg-slate-100 dark:bg-surface-700 my-2"></div>
+
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2.5 text-sm font-bold text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
     </header>
   );
 };
+

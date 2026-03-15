@@ -6,42 +6,72 @@ import { Type, FunctionDeclaration } from '@google/genai';
 export const toolDeclarations: FunctionDeclaration[] = [
   {
     name: "navigate",
-    description: "Navigate to a page in the application (dashboard, home, or setup)",
+    description: "Navigate to a page in the application. Note: admin pages require administrative privileges.",
     parameters: {
       type: Type.OBJECT,
       properties: {
         destination: {
           type: Type.STRING,
-          description: "The page to navigate to: dashboard, home, setup, accessibility-guide"
+          description: "The page to navigate to: dashboard, home, setup, accessibility-guide, admin, admin-roadmap, admin-review"
         }
       },
       required: ["destination"]
     }
   },
   {
+    name: "executeAction",
+    description: "Execute a specific UI action or fill out a form on the current or target page. Use this for complex tasks like generating roadmaps.",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        page: {
+          type: Type.STRING,
+          description: "The page context for the action (e.g., 'admin-roadmap')"
+        },
+        action: {
+          type: Type.STRING,
+          description: "The action to perform (e.g., 'fill_roadmap_form')"
+        },
+        data: {
+          type: Type.OBJECT,
+          description: "Key-value pairs of data for the action (e.g., { profile: 'student info', goal: 'algebra' })"
+        }
+      },
+      required: ["page", "action", "data"]
+    }
+  },
+  {
+    name: "resumeLearning",
+    description: "Continue where the user left off. Use this when the user says 'resume', 'continue', or 'let's get back to it'.",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {}
+    }
+  },
+  {
     name: "openLesson",
-    description: "Open a specific lesson by subject and chapter number",
+    description: "Open a specific lesson by subject and optional chapter/lesson numbers. If numbers are omitted, the agent will autonomously start from the beginning of the subject or chapter.",
     parameters: {
       type: Type.OBJECT,
       properties: {
         subject: {
           type: Type.STRING,
-          description: "The subject name such as physics, mathematics, chemistry, biology"
+          description: "The subject name"
         },
         chapterNumber: {
           type: Type.NUMBER,
-          description: "The chapter number starting from 1"
+          description: "Optional: The chapter number starting from 1"
         },
         lessonNumber: {
           type: Type.NUMBER,
-          description: "The lesson or section number within the chapter, starting from 1"
+          description: "Optional: The lesson or section number within the chapter, starting from 1"
         },
         contentType: {
           type: Type.STRING,
-          description: "The type of content to open: article, video, quiz, or practice"
+          description: "Optional: The type of content to open: article, video, quiz, or practice"
         }
       },
-      required: ["subject", "chapterNumber"]
+      required: ["subject"]
     }
   },
   {
@@ -149,6 +179,35 @@ export const toolDeclarations: FunctionDeclaration[] = [
         }
       },
       required: ["description", "type"]
+    }
+  },
+  {
+    name: "planLesson",
+    description: "Structure a lesson session by defining a series of learning objectives or steps. This gives the user a roadmap of what you will teach in Pulse mode.",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        topic: {
+          type: Type.STRING,
+          description: "The main topic of the plan"
+        },
+        steps: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.STRING
+          },
+          description: "A list of 3-5 sub-topics or steps you will cover in this session"
+        }
+      },
+      required: ["topic", "steps"]
+    }
+  },
+  {
+    name: "getCurrentLessonContent",
+    description: "Get the text content of the lesson currently visible on the user's screen. Use this when the user asks you to 'read this', 'narrate the lesson', or 'summarize this page'.",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {}
     }
   }
 ];
