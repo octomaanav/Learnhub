@@ -119,6 +119,32 @@ You are the heartbeat of their learning. Be passionate, proactive, and VISUAL.`;
 }
 
 // =============================================================================
+// WAKE WORD MATCHING
+// =============================================================================
+
+// Fuzzy wake word matcher — handles accent, background noise, and transcription
+// drift (e.g. "lauren hub", "learn up", "learning hub", "hey lernhub").
+// Strategy: require "hey" near the start + any phonetic variant of "learnhub".
+function isWakeWord(text: string): boolean {
+  const t = text.trim();
+
+  // Must contain "hey" (or close — "a", "ey" are too short to be worth catching)
+  if (!t.includes('hey') && !t.includes('hi ')) return false;
+
+  // All known transcription variants of "learnhub"
+  const learnVariants = [
+    'learnhub', 'learn hub', 'learn up', 'learn help',
+    'lauren hub', 'lauren up', 'lauren help', 'lauren',
+    'lernhub', 'lern hub',
+    'learning hub', 'learned hub',
+    'learn hub', 'lurn hub',
+    'lan hub', 'lanhub',
+  ];
+
+  return learnVariants.some(v => t.includes(v));
+}
+
+// =============================================================================
 // PROVIDER
 // =============================================================================
 
@@ -141,6 +167,8 @@ export const VoiceAgentProvider: React.FC<VoiceAgentProviderProps> = ({
   const hasGreetedRef = useRef<boolean>(false);
   const wakeWordRecRef = useRef<any>(null);
   const isListeningRef = useRef(false);
+  // Always holds the latest startListening without being a reactive dependency
+  const startListeningRef = useRef<() => void>(() => {});
 
   // Keep ref in sync with isListening state (used inside wake-word closures)
   useEffect(() => {
@@ -346,6 +374,11 @@ export const VoiceAgentProvider: React.FC<VoiceAgentProviderProps> = ({
     }
   }, [isConnected, connect, client, agentMode, recentProgress]);
 
+  // Keep ref current so wake word handler always calls the latest version
+  useEffect(() => {
+    startListeningRef.current = startListening;
+  }, [startListening]);
+
   const stopListening = useCallback(() => {
     audioRecorderRef.current?.stop();
     setIsListening(false);
@@ -375,11 +408,16 @@ export const VoiceAgentProvider: React.FC<VoiceAgentProviderProps> = ({
 
   // Wake word detection — passively listens for "hey learnhub" via SpeechRecognition.
   // Automatically pauses while the full Gemini session is active.
+  // startListening is intentionally accessed via ref to avoid restarting the recognizer
+  // every time startListening's identity changes (which would break continuous detection).
   useEffect(() => {
     if (!user || !isSupported || isListening) return;
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
+    if (!SpeechRecognition) {
+      console.warn('[Wake Word] SpeechRecognition not supported in this browser.');
+      return;
+    }
 
     let active = true;
 
@@ -394,25 +432,31 @@ export const VoiceAgentProvider: React.FC<VoiceAgentProviderProps> = ({
 
       rec.onresult = (event: any) => {
         const text = (event.results[0]?.[0]?.transcript ?? '').toLowerCase();
-        if (text.includes('hey learnhub') || text.includes('hey learn hub')) {
+        console.log('[Wake Word] Heard:', text);
+        if (isWakeWord(text)) {
+          console.log('[Wake Word] Triggered — starting Gemini session');
           active = false;
-          startListening();
+          startListeningRef.current();
         } else if (active) {
           setTimeout(startWakeWord, 100);
         }
       };
 
-      rec.onerror = () => {
-        if (active) setTimeout(startWakeWord, 1500);
+      rec.onerror = (e: any) => {
+        // 'no-speech' is normal — just restart quietly
+        if (active) setTimeout(startWakeWord, e?.error === 'no-speech' ? 100 : 1500);
       };
 
       rec.onend = () => {
         if (active) setTimeout(startWakeWord, 100);
       };
 
-      try { rec.start(); } catch (_) {}
+      try {
+        rec.start();
+      } catch (_) {}
     };
 
+    console.log('[Wake Word] Listener armed — say "hey learnhub" to activate');
     startWakeWord();
 
     return () => {
@@ -420,7 +464,8 @@ export const VoiceAgentProvider: React.FC<VoiceAgentProviderProps> = ({
       wakeWordRecRef.current?.abort();
       wakeWordRecRef.current = null;
     };
-  }, [user, isSupported, isListening, startListening]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, isSupported, isListening]);
 
   // When agent mode changes while listening, stop and forcing a fresh session isn't strictly needed for config but helps clean state
   useEffect(() => {
