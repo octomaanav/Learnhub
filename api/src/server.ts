@@ -7,6 +7,7 @@ import { sql } from "drizzle-orm";
 import { db } from "./db/index.js";
 import { seed } from "./db/seed.js";
 import { seedLessons } from "./db/seedLessons.js";
+import { seedChessCourse } from "./db/seedChess.js";
 import usersRouter from "./routes/users.js";
 import accountsRouter from "./routes/accounts.js";
 import parseSourceRouter from "./routes/parse_source.js";
@@ -203,6 +204,15 @@ async function startServer() {
         console.log("✅ Lesson seeding complete");
       } catch (lessonErr) {
         console.warn("⚠️ Lesson seeding failed/skipped:", lessonErr);
+      }
+
+      // Seed Knowledge Hub — Chess course
+      try {
+        console.log("Seeding Knowledge Hub chess course...");
+        await seedChessCourse();
+        console.log("✅ Chess course seeding complete");
+      } catch (chessErr) {
+        console.warn("⚠️ Chess course seeding failed/skipped:", chessErr);
       }
     } catch (error) {
       console.error("❌ Background initialization failed:", error);

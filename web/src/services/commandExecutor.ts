@@ -147,13 +147,13 @@ export class CommandExecutor {
     return responses;
   }
 
-  private toggleFocusMode(enabled?: boolean): boolean {
+  private toggleFocusMode(_enabled?: boolean): boolean {
     try {
-      const event = new CustomEvent('focus-mode-toggle', { detail: { value: enabled } });
-      window.dispatchEvent(event);
+      // Navigate to the dedicated Pulse page — this IS focus/zen mode
+      this.deps.navigate('/pulse');
       return true;
     } catch (error) {
-      console.error('[CommandExecutor] Failed to toggle focus mode:', error);
+      console.error('[CommandExecutor] Failed to activate Pulse mode:', error);
       return false;
     }
   }

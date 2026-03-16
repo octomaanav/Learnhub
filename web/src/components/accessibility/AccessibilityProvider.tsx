@@ -24,7 +24,11 @@ const applySettingsToDocument = (settings: AccessibilityPreferences) => {
 };
 
 export const AccessibilityProvider = ({ children }: { children: React.ReactNode }) => {
-  const [settings, setSettings] = useState<AccessibilityPreferences>(() => loadAccessibilityPreferences());
+  const [settings, setSettings] = useState<AccessibilityPreferences>(() => {
+    const loaded = loadAccessibilityPreferences();
+    // Always start with focusMode off — it's session-only and must never persist.
+    return { ...loaded, focusMode: false };
+  });
 
   useEffect(() => {
     applySettingsToDocument(settings);

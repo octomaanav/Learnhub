@@ -12,12 +12,15 @@ import { CommandExecutor } from '../services/commandExecutor';
 
 export type AgentMode = 'normal' | 'pulse';
 
+export type AgentStatus = 'idle' | 'connecting' | 'listening' | 'processing' | 'speaking' | 'error';
+
 interface VoiceAgentContextType {
   isListening: boolean;
   isSupported: boolean;
   transcript: string;
   error: string | null;
   agentMode: AgentMode;
+  agentStatus: AgentStatus;
   setAgentMode: (mode: AgentMode) => void;
   startListening: () => void;
   stopListening: () => void;
@@ -54,68 +57,30 @@ interface VoiceAgentProviderProps {
 // =============================================================================
 
 function getNormalSystemInstruction(userName: string, progressStats?: ProgressStats, recentProgress?: RecentProgress): string {
-  const currentChapter = recentProgress?.chapterSlug ? `Chapter: ${recentProgress.chapterSlug}` : 'None';
-  const statsString = progressStats?.subjectStats?.map(s => `${s.name}: ${s.percentage}%`).join(', ') || 'No progress yet';
-
-  return `You are a highly intelligent, proactive voice assistant for LearnHub. You operate with a ReAct (Reasoning + Acting) loop.
-
-Current Student: ${userName}
-Memory/Progress: ${statsString}
-Last Active: ${recentProgress?.found ? `${recentProgress.title} (${currentChapter})` : 'New student'}
-Screen Visibility: ${window.location.pathname}
-
-YOUR ROLE:
-1. You are INDEPENDENT. If the user is vague, you make the best choice for them.
-   - Example: "Let's learn Physics" -> Autonomously call 'openLesson' for Physics Chapter 1. Do NOT ask which lesson.
-   - Example: "Continue" -> Call 'resumeLearning'.
-2. You guide them through their curriculum.
-3. You can recite database lessons word-for-word using 'queryKnowledgeBase'.
-
-Available Commands: 
-- Navigation: navigate, openLesson, resumeLearning
-- Lesson Ops: lessonControl, queryKnowledgeBase, getCurrentLessonContent
-- Discovery: listSubjects, listChapters
-- Accessibility: toggleFocusMode (aka Zen Mode), openStoryMode, openBraille, convertBraille
-- Complex Actions: executeAction (Use for roadmaps, forms, etc.)
-- Narrate This: When the user says "read this", "narrate the lesson", or "what's on my screen?", you MUST call 'getCurrentLessonContent' to see the lesson text and then read it aloud.
-- Zen Mode: When the user says "Zen Mode", "focus", or "distraction-free", call 'toggleFocusMode'.
-- Roadmaps: When asked for a learning path or roadmap, FIRST call 'navigate' with destination 'admin-roadmap', THEN call 'executeAction' with page 'admin-roadmap', action 'fill_roadmap_form', and data { profile: '...', goal: '...', trigger: true }.
-
-Be concise, authoritative, and act like a world-class AI agent. Make decisions for the student to keep the flow smooth.`;
+  const stats = progressStats?.subjectStats?.map(s => `${s.name}:${s.percentage}%`).join(',') || 'none';
+  const last = recentProgress?.found ? recentProgress.title : 'new';
+  return `LearnHub voice agent. Student: ${userName}. Progress: ${stats}. Last: ${last}. Page: ${window.location.pathname}.
+Rules: Be brief and helpful. Ask one clarifying question only if needed.
+- "continue"→resumeLearning. "learn X"→openLesson(X). "read this"→getCurrentLessonContent then read it.
+- "focus"/"zen"/"pulse"/"start learning"→say "Activating Pulse mode" then toggleFocusMode.
+- Roadmap request→navigate(admin-roadmap) then executeAction(fill_roadmap_form,{profile,goal,trigger:true}).
+- Story→openStoryMode. Braille→openBraille.
+- You can teach ANY topic from your own knowledge. NEVER say a topic is unavailable.
+- Speak in English by default. Only switch to another language when the student explicitly asks (e.g. "teach me in Hindi").`;
 }
 
-function getPulseSystemInstruction(userName: string, currentTopic: string, progressStats?: ProgressStats, recentProgress?: RecentProgress): string {
-  const statsString = progressStats?.subjectStats?.map(s => `${s.name}: ${s.percentage}%`).join(', ') || 'No progress yet';
-
-  return `You are THE PULSE — a world-class autonomous AI tutor for LearnHub.
-Current Student: ${userName}
-Curriculum Stats: ${statsString}
-Last Achievement: ${recentProgress?.title || 'None'}
-Current Topic: ${currentTopic}
-
-**CRITICAL RULE — NEVER NAVIGATE AWAY:**
-You are on the Pulse page. This is a self-contained immersive learning environment.
-- NEVER call 'navigate', 'openLesson', or 'resumeLearning'. They will be blocked.
-- ALL content must be delivered through voice, the visual canvas ('generateVisualCanvas'), or inline actions ('executeAction').
-- The student stays on this page until they manually click "Return to Dashboard."
-
-AUTONOMOUS BEHAVIOR:
-1. PROACTIVE WELCOME: Welcome the student by name. Reference their "Last Achievement" if they've made progress. Ask: "Would you like to continue with [topic], or explore something new?"
-2. DISCOVERY: If they want to continue, call 'queryKnowledgeBase' for the topic and teach it vocally + visually.
-3. STORYTELLING: If they want something new, teach from your internal Gemini knowledge.
-4. INDEPENDENCE: Do not ask for permissions. Call 'planLesson' at the start of a session.
-
-**CRITICAL — VISUALS:**
-- You MUST call 'generateVisualCanvas' frequently while teaching. Every 2-3 sentences, push a relevant visual.
-- For diagrams (flowcharts, concept maps, cycles), use type='mermaid_diagram' and provide valid Mermaid syntax in the mermaidCode field.
-- For illustrations (anatomy, experiments, scenes, objects), use type='image_prompt' with a detailed description.
-- NEVER just talk without pushing visuals. The student has a large canvas in front of them — USE IT.
-- The canvas can show images, Mermaid diagrams, roadmaps, etc. Each new 'generateVisualCanvas' call replaces what was there before.
-
-5. ROADMAPS: When asked for a learning path or roadmap, call 'executeAction' with page 'admin-roadmap', action 'fill_roadmap_form', and data { profile: '<student profile>', goal: '<their goal>', trigger: true }. The roadmap will be generated and displayed inline on this page. Do NOT navigate.
-6. KNOWLEDGE: Use 'queryKnowledgeBase' to fetch lesson content and teach it. Use 'listSubjects' and 'listChapters' to discover available curriculum.
-
-You are the heartbeat of their learning. Be passionate, proactive, and VISUAL.`;
+function getPulseSystemInstruction(userName: string, _currentTopic: string, progressStats?: ProgressStats, recentProgress?: RecentProgress): string {
+  const stats = progressStats?.subjectStats?.map(s => `${s.name}:${s.percentage}%`).join(',') || 'none';
+  const last = recentProgress?.title || 'none';
+  return `LearnHub Pulse tutor. Student: ${userName}. Progress: ${stats}. Last: ${last}.
+Rules:
+- NEVER call navigate, openLesson, resumeLearning, or executeAction. Those tools are blocked in Pulse.
+- Speak in short sentences. Be upbeat and encouraging.
+- Greet by name, reference last topic, ask to continue or explore new.
+- When teaching ANY topic, call generateVisualCanvas to show visuals while you explain. Use type='image_prompt' for pictures and type='mermaid_diagram' (with mermaidCode) for flowcharts. Generate a visual early, then every 2-3 sentences.
+- You can teach ANY topic from your own knowledge. NEVER say a topic is unavailable. Just start teaching.
+- Speak in English by default. Only switch language when the student explicitly asks.
+`;
 }
 
 // =============================================================================
@@ -160,6 +125,7 @@ export const VoiceAgentProvider: React.FC<VoiceAgentProviderProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [availableSubjects, setAvailableSubjects] = useState<SubjectWithChapters[]>([]);
   const [agentMode, setAgentMode] = useState<AgentMode>('normal');
+  const [agentStatus, setAgentStatus] = useState<AgentStatus>('idle');
   const [progressStats, setProgressStats] = useState<ProgressStats | null>(null);
   const [recentProgress, setRecentProgress] = useState<RecentProgress | null>(null);
 
@@ -169,6 +135,9 @@ export const VoiceAgentProvider: React.FC<VoiceAgentProviderProps> = ({
   const isListeningRef = useRef(false);
   // Always holds the latest startListening without being a reactive dependency
   const startListeningRef = useRef<() => void>(() => {});
+  // Stuck detection: if we sent a tool response but got no audio back, reconnect
+  const stuckCheckRef = useRef<{ lastToolResponseAt: number; expectingAudio: boolean } | null>(null);
+  const sessionStartTimeRef = useRef<number>(0);
 
   // Keep ref in sync with isListening state (used inside wake-word closures)
   useEffect(() => {
@@ -229,9 +198,11 @@ export const VoiceAgentProvider: React.FC<VoiceAgentProviderProps> = ({
 
   // Build config based on agent mode
   useEffect(() => {
-    // Normal mode: only navigation + KB query tools. Pulse mode: full toolset.
+    // Pulse mode: minimal tools (just visuals). Normal mode: navigation + KB query tools.
     const activeTools = agentMode === 'pulse'
-      ? toolDeclarations
+      ? toolDeclarations.filter(t =>
+        ['generateVisualCanvas', 'planLesson', 'queryKnowledgeBase'].includes(t.name || '')
+      )
       : toolDeclarations.filter(t =>
         ['navigate', 'openLesson', 'lessonControl', 'listSubjects', 'listChapters',
           'toggleFocusMode', 'openStoryMode', 'openBraille', 'convertBraille',
@@ -253,10 +224,11 @@ export const VoiceAgentProvider: React.FC<VoiceAgentProviderProps> = ({
       realtimeInputConfig: {
         automaticActivityDetection: {
           disabled: false,
-          startOfSpeechSensitivity: StartSensitivity.START_SENSITIVITY_HIGH,
-          endOfSpeechSensitivity: EndSensitivity.END_SENSITIVITY_LOW,
-          prefixPaddingMs: 300,
-          silenceDurationMs: 2000,
+          // LOW so background noise doesn't interrupt the agent mid-explanation
+          startOfSpeechSensitivity: StartSensitivity.START_SENSITIVITY_LOW,
+          endOfSpeechSensitivity: EndSensitivity.END_SENSITIVITY_HIGH,
+          prefixPaddingMs: 200,
+          silenceDurationMs: 800,
         },
       },
       tools: [
@@ -269,41 +241,109 @@ export const VoiceAgentProvider: React.FC<VoiceAgentProviderProps> = ({
     setConfig(config);
   }, [setConfig, agentMode, systemInstruction]);
 
-  // Tool call handler - Execute commands from Gemini using CommandExecutor
+  // Tool call handler + status tracking via Gemini Live events
   useEffect(() => {
     const onToolCall = async (toolCall: any) => {
       console.log('[Voice Agent] 🤖 RECEIVED TOOL CALL:', toolCall);
+      setAgentStatus('processing');
 
-      // Execute commands using the command executor service
       const responses = await commandExecutor.executeToolCall(toolCall);
 
-      // Send tool responses back to Gemini
       if (responses.length > 0) {
-        client.sendToolResponse({
-          functionResponses: responses
-        });
+        try {
+          client.sendToolResponse({
+            functionResponses: responses
+          });
+          stuckCheckRef.current = { lastToolResponseAt: Date.now(), expectingAudio: true };
+        } catch (e) {
+          console.error('[Voice Agent] sendToolResponse failed:', e);
+        }
       }
     };
 
     const onError = (error: any) => {
       console.error('[Voice Agent] Error:', error?.message || error);
       setError(error.message || 'Gemini Live API error');
+      setAgentStatus('error');
     };
 
     const onInterrupted = () => {
-      // Audio playback interrupted by user speech — normal behavior
+      setAgentStatus('listening');
+    };
+
+    const onAudioStatus = () => {
+      setAgentStatus('speaking');
+      if (stuckCheckRef.current) stuckCheckRef.current.expectingAudio = false;
+    };
+
+    const onTurnComplete = () => {
+      if (isListeningRef.current) {
+        setAgentStatus('listening');
+      }
+    };
+
+    const onToolCallCancellation = (cancellation: any) => {
+      console.warn('[Voice Agent] Tool call cancelled:', cancellation);
+      stuckCheckRef.current = null;
+      if (isListeningRef.current) setAgentStatus('listening');
     };
 
     client.on('toolcall', onToolCall);
+    client.on('toolcallcancellation', onToolCallCancellation);
     client.on('error', onError);
     client.on('interrupted', onInterrupted);
+    client.on('audio', onAudioStatus);
+    client.on('turncomplete', onTurnComplete);
 
     return () => {
       client.off('toolcall', onToolCall);
+      client.off('toolcallcancellation', onToolCallCancellation);
       client.off('error', onError);
       client.off('interrupted', onInterrupted);
+      client.off('audio', onAudioStatus);
+      client.off('turncomplete', onTurnComplete);
     };
   }, [client, commandExecutor]);
+
+  // Stuck detection + periodic refresh in Pulse: reconnect if no audio after tool response, or every 4 min in Pulse
+  useEffect(() => {
+    const STUCK_MS = 12000;
+    const PULSE_REFRESH_MS = 4 * 60 * 1000;
+    const interval = setInterval(() => {
+      if (!isListeningRef.current) return;
+
+      // 1) Stuck: sent tool response but no audio back within 18s
+      if (stuckCheckRef.current?.expectingAudio) {
+        const elapsed = Date.now() - stuckCheckRef.current.lastToolResponseAt;
+        if (elapsed >= STUCK_MS) {
+          console.warn('[Voice Agent] No audio after tool response for', Math.round(elapsed / 1000), 's — reconnecting session');
+          stuckCheckRef.current.expectingAudio = false;
+          hasGreetedRef.current = false;
+          sessionStartTimeRef.current = 0;
+          audioRecorderRef.current?.stop();
+          setAgentStatus('connecting');
+          disconnect();
+          setTimeout(() => startListeningRef.current(), 2500);
+        }
+        return;
+      }
+
+      // 2) Pulse: proactive refresh every 4 min to avoid long-lived session going stale
+      if (agentMode === 'pulse' && sessionStartTimeRef.current > 0) {
+        const sessionAge = Date.now() - sessionStartTimeRef.current;
+        if (sessionAge >= PULSE_REFRESH_MS) {
+          console.warn('[Voice Agent] Pulse session refresh after', Math.round(sessionAge / 1000), 's');
+          sessionStartTimeRef.current = 0;
+          hasGreetedRef.current = false;
+          audioRecorderRef.current?.stop();
+          setAgentStatus('connecting');
+          disconnect();
+          setTimeout(() => startListeningRef.current(), 2500);
+        }
+      }
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [disconnect, agentMode]);
 
   // Check browser support for audio
   const isSupported = typeof navigator !== 'undefined' &&
@@ -314,8 +354,8 @@ export const VoiceAgentProvider: React.FC<VoiceAgentProviderProps> = ({
   const startListening = useCallback(async () => {
     try {
       console.log('[Voice Agent] Starting listening...');
+      setAgentStatus('connecting');
 
-      // First, ensure we're connected to Gemini Live API
       if (!isConnected || client.status !== 'connected') {
         await connect();
         // Wait for connection to be established
@@ -348,22 +388,21 @@ export const VoiceAgentProvider: React.FC<VoiceAgentProviderProps> = ({
         }
       });
 
-      // Start audio recording
       await audioRecorderRef.current.start();
+      sessionStartTimeRef.current = Date.now();
       setIsListening(true);
       setError(null);
+      setAgentStatus('listening');
 
       // Send an initial greeting based on mode
       if (client.status === 'connected' && !hasGreetedRef.current) {
         hasGreetedRef.current = true;
 
         if (agentMode === 'pulse') {
-          const topicContext = recentProgress?.found
-            ? `We were recently working on ${recentProgress.title}.`
-            : "We haven't started a specific topic yet.";
-          client.send([{ text: `Hi, I just entered Pulse. Give me a proactive welcome! ${topicContext} Greet me, tell me my status, and ask if I want to continue or explore something new.` }]);
+          const topicContext = recentProgress?.found ? recentProgress.title : '';
+          client.send([{ text: `Greet ${user?.name || 'the student'} warmly in English, in 1-2 short sentences.${topicContext ? ` Mention we were working on ${topicContext}.` : ''} Ask what they'd like to learn today — they can continue previous topics or explore anything new. Be enthusiastic and inviting.` }]);
         } else {
-          client.send([{ text: `Hi! I need help navigating LearnHub. Let me know what you can do for me.` }]);
+          client.send([{ text: `Greet ${user?.name || 'the student'} in one short sentence. You're their LearnHub voice assistant.` }]);
         }
       }
     } catch (err: any) {
@@ -371,6 +410,7 @@ export const VoiceAgentProvider: React.FC<VoiceAgentProviderProps> = ({
       console.error('[Voice Agent] Start error:', errorMsg);
       setError(errorMsg);
       setIsListening(false);
+      setAgentStatus('error');
     }
   }, [isConnected, connect, client, agentMode, recentProgress]);
 
@@ -383,6 +423,7 @@ export const VoiceAgentProvider: React.FC<VoiceAgentProviderProps> = ({
     audioRecorderRef.current?.stop();
     setIsListening(false);
     setTranscript('');
+    setAgentStatus('idle');
   }, []);
 
   // Auto-reconnect when the Gemini session drops while the user is still in a session.
@@ -490,6 +531,7 @@ export const VoiceAgentProvider: React.FC<VoiceAgentProviderProps> = ({
     transcript,
     error,
     agentMode,
+    agentStatus,
     setAgentMode,
     startListening,
     stopListening,

@@ -1,9 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useVoiceAgent } from '../components/VoiceAgentProvider';
 import { apiUrl } from '../utils/api';
-import { Sparkles, BookOpen, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
+import { PulseWaveform } from '../components/LearnHubLogo';
+import { MermaidDiagram } from '../components/MermaidDiagram';
 
 interface RoadmapStep {
   title: string;
@@ -14,10 +16,9 @@ interface RoadmapStep {
 export default function PulsePage() {
   const navigate = useNavigate();
   const { theme } = useAuth();
-  const { startListening, stopListening, setAgentMode, isListening } = useVoiceAgent();
+  const { startListening, stopListening, setAgentMode, isListening, agentStatus } = useVoiceAgent();
 
   const [visualState, setVisualState] = useState<{ description: string; type: string; mermaidCode?: string } | null>(null);
-  const [lessonPlan, setLessonPlan] = useState<{ topic: string; steps: string[] } | null>(null);
 
   // Inline roadmap state
   const [roadmap, setRoadmap] = useState<RoadmapStep[] | null>(null);
@@ -42,22 +43,6 @@ export default function PulsePage() {
       setAgentMode('normal');
     };
   }, [stopListening, setAgentMode]);
-
-  // Listen for visual canvas and lesson plan events
-  useEffect(() => {
-    const handleVisualUpdate = (e: any) => {
-      setVisualState(e.detail);
-      setActivePanel('visual');
-    };
-    const handlePlanUpdate = (e: any) => setLessonPlan(e.detail);
-
-    window.addEventListener('visual-canvas-update', handleVisualUpdate);
-    window.addEventListener('lesson-plan-update', handlePlanUpdate);
-    return () => {
-      window.removeEventListener('visual-canvas-update', handleVisualUpdate);
-      window.removeEventListener('lesson-plan-update', handlePlanUpdate);
-    };
-  }, []);
 
   // Handle roadmap generation inline when agent triggers it
   const generateRoadmap = useCallback(async (profile: string, goal: string) => {
@@ -108,6 +93,27 @@ export default function PulsePage() {
     return () => window.removeEventListener('page-action-triggered', handleAgentAction);
   }, [generateRoadmap]);
 
+  // Listen for visual canvas events
+  useEffect(() => {
+    const handleVisualUpdate = (e: any) => {
+      setVisualState(e.detail);
+      setActivePanel('visual');
+    };
+
+    window.addEventListener('visual-canvas-update', handleVisualUpdate);
+    return () => window.removeEventListener('visual-canvas-update', handleVisualUpdate);
+  }, [generateRoadmap]);
+
+  const statusConfig: Record<string, { label: string; color: string; dotColor: string; glow: string }> = {
+    idle: { label: 'Idle', color: 'text-slate-400', dotColor: 'bg-slate-400', glow: '' },
+    connecting: { label: 'Connecting...', color: 'text-amber-400', dotColor: 'bg-amber-400', glow: 'shadow-[0_0_8px_rgba(251,191,36,0.6)]' },
+    listening: { label: 'Listening', color: 'text-green-400', dotColor: 'bg-green-500', glow: 'shadow-[0_0_8px_rgba(34,197,94,0.6)]' },
+    processing: { label: 'Thinking...', color: 'text-blue-400', dotColor: 'bg-blue-500', glow: 'shadow-[0_0_8px_rgba(59,130,246,0.6)]' },
+    speaking: { label: 'Speaking', color: 'text-purple-400', dotColor: 'bg-purple-500', glow: 'shadow-[0_0_8px_rgba(168,85,247,0.6)]' },
+    error: { label: 'Error', color: 'text-red-400', dotColor: 'bg-red-500', glow: 'shadow-[0_0_8px_rgba(239,68,68,0.6)]' },
+  };
+  const currentStatus = statusConfig[agentStatus] || statusConfig.idle;
+
   const handleExit = () => {
     stopListening();
     setAgentMode('normal');
@@ -128,58 +134,8 @@ export default function PulsePage() {
         <div className={`absolute top-1/3 left-1/3 w-[600px] h-[600px] blur-[120px] rounded-full animate-float ${theme === 'dark' ? 'bg-blue-600/10' : 'bg-blue-600/20'}`} />
       </div>
 
-      <div className="relative flex w-full h-full p-6 sm:p-12 gap-8 z-10">
-        {/* Left Column: Lesson Roadmap */}
-        <div className="hidden lg:flex flex-col w-[340px] h-full animate-in slide-in-from-left duration-700">
-          <div className={`${theme === 'dark' ? 'bg-black/60 border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.3)]' : 'bg-white/80 border-slate-200 shadow-xl'} backdrop-blur-3xl border rounded-[3rem] p-10 h-full flex flex-col`}>
-            <div className="w-14 h-14 bg-primary-500/10 rounded-2xl flex items-center justify-center text-primary-400 mb-10 shadow-inner">
-              <BookOpen className="w-7 h-7" />
-            </div>
-
-            <h3 className={`text-xl font-black uppercase tracking-widest mb-2 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Lesson Roadmap</h3>
-            <p className={`text-sm font-bold mb-12 leading-relaxed uppercase tracking-wider ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-              {lessonPlan?.topic || 'Discovering insights...'}
-            </p>
-
-            <div className="flex-1 min-h-0 overflow-y-auto thin-scrollbar pr-2 space-y-6">
-              {lessonPlan ? (
-                lessonPlan.steps.map((step, idx) => (
-                  <div key={idx} className="flex gap-4 group">
-                    <div className="flex flex-col items-center">
-                      <div className="w-9 h-9 rounded-full border-2 border-primary-500/30 flex items-center justify-center text-xs font-black text-primary-400 group-hover:bg-primary-500 group-hover:text-white group-hover:border-primary-500 transition-all shrink-0 shadow-[0_0_15px_rgba(88,204,2,0.1)]">
-                        {idx + 1}
-                      </div>
-                      {idx < lessonPlan.steps.length - 1 && (
-                        <div className="w-0.5 flex-1 bg-gradient-to-b from-primary-500/30 to-transparent my-3" />
-                      )}
-                    </div>
-                    <p className={`font-bold text-sm leading-tight mt-1.5 transition-colors capitalize ${theme === 'dark' ? 'text-slate-200 group-hover:text-white' : 'text-slate-700 group-hover:text-primary-600'}`}>
-                      {step}
-                    </p>
-                  </div>
-                ))
-              ) : (
-                <div className="space-y-6 opacity-40">
-                  {[1, 2, 3, 4].map(idx => (
-                    <div key={idx} className="flex gap-4 animate-pulse">
-                      <div className="w-8 h-8 rounded-full bg-surface-800 shrink-0" />
-                      <div className="h-4 bg-surface-800 rounded w-full mt-2" />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="mt-8 p-5 bg-primary-500/10 rounded-[1.5rem] border border-primary-500/20 shadow-[inset_0_0_20px_rgba(88,204,2,0.05)]">
-              <p className="text-[10px] font-black text-primary-400 uppercase tracking-widest leading-loose flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary-500 animate-pulse" />
-                Listening for questions...
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Visual Canvas & Status */}
+      <div className="relative flex w-full h-full p-6 sm:p-12 z-10">
+        {/* Main content: Visual Canvas & Status */}
         <div className="flex-1 flex flex-col h-full gap-8">
           {/* Header Status */}
           <div className="flex items-center justify-between animate-in slide-in-from-top duration-700">
@@ -281,13 +237,20 @@ export default function PulsePage() {
                     {visualState!.description}
                   </p>
                 </div>
-                <div className="flex-1 flex items-center justify-center min-h-0">
+                <div className="flex-1 flex items-center justify-center min-h-0 overflow-auto">
                   {visualState!.type === 'image_prompt' ? (
                     <img
                       src={apiUrl(`/api/story/diagram?q=${encodeURIComponent(visualState!.description)}`)}
                       className="max-w-full max-h-full object-contain rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.6)] animate-in fade-in zoom-in duration-700 border border-white/10"
                       alt={visualState!.description}
                     />
+                  ) : visualState!.type === 'mermaid_diagram' && (visualState!.mermaidCode || visualState!.description) ? (
+                    <div className="w-full max-w-2xl p-8 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.6)] animate-in fade-in zoom-in duration-700 border border-white/10 bg-black/40">
+                      <MermaidDiagram
+                        code={visualState!.mermaidCode || visualState!.description}
+                        className="min-h-[200px]"
+                      />
+                    </div>
                   ) : (
                     <pre className="text-left font-mono text-xs sm:text-sm text-primary-400 bg-black/80 p-10 rounded-[2.5rem] border border-primary-500/30 shadow-[inset_0_0_40px_rgba(0,0,0,0.5)] w-full h-full overflow-auto thin-scrollbar animate-in slide-in-from-bottom duration-700">
                       {visualState!.mermaidCode || visualState!.description}
@@ -297,25 +260,34 @@ export default function PulsePage() {
               </div>
             )}
 
-            {/* Empty state */}
+            {/* Empty state — animated waveform logo */}
             {showEmpty && (
               <div className="absolute inset-0 flex flex-col items-center justify-center p-12 text-center">
-                <div className="relative mb-6">
-                  <div className="absolute inset-0 bg-primary-500 blur-[60px] opacity-20 animate-pulse" />
-                  <Sparkles className="relative w-16 h-16 text-primary-500 animate-float" />
-                </div>
-                <h2 className={`text-4xl sm:text-6xl font-black mb-4 tracking-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Immersive Canvas</h2>
-                <p className={`font-bold text-base max-w-lg mx-auto leading-relaxed ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                  I'll project diagrams, roadmaps, and models here as we explore your curriculum.
+                <PulseWaveform active={isListening} />
+
+                <p className={`mt-10 font-bold text-sm max-w-sm mx-auto leading-relaxed ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Diagrams, roadmaps, and visuals will appear here as we learn.
                 </p>
 
-                <div className={`mt-12 flex items-center gap-3 px-8 py-3.5 border rounded-full animate-pulse shadow-lg ${theme === 'dark' ? 'bg-white/10 border-white/20' : 'bg-slate-100 border-slate-200'}`}>
-                  <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
-                  <span className={`text-[10px] font-black uppercase tracking-widest ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Listening for voice Input</span>
+                <div className={`mt-8 flex items-center gap-3 px-6 py-3 border rounded-full shadow-lg ${theme === 'dark' ? 'bg-white/5 border-white/10' : 'bg-slate-100 border-slate-200'}`}>
+                  <div className={`w-2 h-2 rounded-full ${currentStatus.dotColor} ${currentStatus.glow} ${agentStatus === 'listening' || agentStatus === 'connecting' ? 'animate-pulse' : ''}`} />
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${theme === 'dark' ? currentStatus.color : 'text-slate-600'}`}>
+                    {currentStatus.label}
+                  </span>
                 </div>
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Persistent status pill — always visible at bottom center */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[110]">
+        <div className={`flex items-center gap-3 px-5 py-2.5 border rounded-full backdrop-blur-2xl transition-all duration-300 ${theme === 'dark' ? 'bg-black/60 border-white/10' : 'bg-white/80 border-slate-200 shadow-lg'}`}>
+          <div className={`w-2.5 h-2.5 rounded-full transition-colors ${currentStatus.dotColor} ${currentStatus.glow} ${agentStatus === 'listening' || agentStatus === 'connecting' || agentStatus === 'speaking' ? 'animate-pulse' : ''}`} />
+          <span className={`text-[11px] font-black uppercase tracking-[0.15em] transition-colors ${theme === 'dark' ? currentStatus.color : 'text-slate-700'}`}>
+            {currentStatus.label}
+          </span>
         </div>
       </div>
     </div>

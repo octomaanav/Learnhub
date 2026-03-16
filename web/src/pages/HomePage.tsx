@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { Flame, Zap, BookOpen, Trophy, Target, ArrowRight, CheckCircle2, Sparkles, Moon, Sun } from "lucide-react";
+import { LearnHubLogo } from '../components/LearnHubLogo';
 
 const features = [
   {
@@ -152,11 +153,8 @@ function HomePage() {
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-4">
           <div className="flex items-center justify-between rounded-2xl border border-surface-200 dark:border-surface-700 bg-surface-100/85 backdrop-blur-md shadow-sm px-4 sm:px-5 py-3">
-            <button
-              onClick={() => navigate('/')}
-              className="font-display text-xl font-black tracking-tight text-surface-900 dark:text-white"
-            >
-              LearnHub
+            <button onClick={() => navigate('/')}>
+              <LearnHubLogo size={32} animated showText />
             </button>
 
             <nav className="flex items-center gap-2 sm:gap-3">
@@ -420,7 +418,7 @@ function HomePage() {
         <footer className={`px-6 py-8 border-t border-surface-200 dark:border-[#1E293B] transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)] ${isDissolving ? 'opacity-0 blur-xl scale-95 translate-y-8 delay-[0ms]' : 'opacity-100 blur-0 scale-100 translate-y-0 delay-0'
           }`}>
           <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="font-display font-bold text-surface-900 dark:text-white text-lg">LearnHub</p>
+            <LearnHubLogo size={28} animated showText />
             <p className="text-xs font-medium text-surface-500 dark:text-surface-600">© 2026 LearnHub. All rights reserved.</p>
           </div>
         </footer>

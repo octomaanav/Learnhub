@@ -27,7 +27,7 @@ variable "region" {
 variable "service_name" {
   description = "Cloud Run service name"
   type        = string
-  default     = "learnhub-api"
+  default     = "learnhub"
 }
 
 variable "database_password" {

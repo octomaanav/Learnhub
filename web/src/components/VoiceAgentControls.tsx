@@ -7,8 +7,19 @@ export const VoiceAgentControls: React.FC = () => {
     isSupported,
     transcript,
     error,
+    agentStatus,
     toggleListening,
   } = useVoiceAgent();
+
+  const statusLabels: Record<string, { text: string; color: string }> = {
+    idle: { text: '', color: '' },
+    connecting: { text: 'Connecting...', color: 'text-amber-400' },
+    listening: { text: 'Listening', color: 'text-green-400' },
+    processing: { text: 'Thinking...', color: 'text-blue-400' },
+    speaking: { text: 'Speaking', color: 'text-purple-400' },
+    error: { text: 'Error', color: 'text-red-400' },
+  };
+  const status = statusLabels[agentStatus] || statusLabels.idle;
 
   const [visualizerHeight, setVisualizerHeight] = useState<number[]>([]);
 
@@ -101,6 +112,15 @@ export const VoiceAgentControls: React.FC = () => {
             )}
           </div>
         </button>
+
+        {/* Status label */}
+        {status.text && (
+          <div className="pointer-events-none flex justify-end">
+            <span className={`text-[10px] font-bold uppercase tracking-widest ${status.color} bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full`}>
+              {status.text}
+            </span>
+          </div>
+        )}
       </div>
 
       <style>{`
