@@ -353,15 +353,15 @@ export const UserSetupPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-surface-50 transition-colors">
+    <div className="h-screen flex flex-col bg-surface-50 transition-colors overflow-hidden">
       {/* Header */}
-      <header className="bg-surface-100 border-b border-surface-200 px-6 py-4">
+      <header className="shrink-0 bg-surface-100 border-b border-surface-200 px-6 py-3">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary-500 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-primary-500/20">
+            <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-primary-500/20">
               L
             </div>
-            <span className="font-bold text-xl text-surface-900 font-display">LearnHub</span>
+            <span className="font-bold text-lg text-surface-900 font-display">LearnHub</span>
           </div>
           <div className="text-sm text-surface-500">
             {t('setup.welcome')}, <span className="font-semibold text-surface-900">{user.name}</span>
@@ -370,13 +370,13 @@ export const UserSetupPage = () => {
       </header>
 
       {/* Progress Bar */}
-      <div className="bg-surface-100/50 backdrop-blur-sm border-b border-surface-200 px-6 py-4">
+      <div className="shrink-0 bg-surface-100/50 backdrop-blur-sm border-b border-surface-200 px-6 py-3">
         <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-1.5">
             {STEPS.map((step, index) => (
               <div key={step.id} className="flex items-center">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm transition-all ${index < currentStepIndex
+                  className={`w-7 h-7 rounded-full flex items-center justify-center font-semibold text-xs transition-all ${index < currentStepIndex
                     ? 'bg-green-500 text-white'
                     : index === currentStepIndex
                       ? 'bg-primary-500 text-white ring-4 ring-primary-500/20'
@@ -386,47 +386,42 @@ export const UserSetupPage = () => {
                   {index < currentStepIndex ? '✓' : index + 1}
                 </div>
                 {index < STEPS.length - 1 && (
-                  <div className={`w-24 h-1 mx-2 rounded ${index < currentStepIndex ? 'bg-green-500' : 'bg-surface-200'
-                    }`} />
+                  <div className={`w-24 h-1 mx-2 rounded ${index < currentStepIndex ? 'bg-green-500' : 'bg-surface-200'}`} />
                 )}
               </div>
             ))}
           </div>
           <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-surface-500">
             {STEPS.map(step => (
-              <span key={step.id} className="w-8 text-center">{step.title}</span>
+              <span key={step.id} className="w-7 text-center">{step.title}</span>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <main className="max-w-5xl mx-auto px-6 py-12 animate-in fade-in slide-in-from-bottom-6 duration-700">
-        <div className="bg-white dark:bg-surface-100 rounded-[3rem] shadow-[0_30px_100px_rgba(0,0,0,0.1)] border border-surface-200 overflow-hidden">
+      {/* Main Content — fills remaining height, card scrolls internally */}
+      <main className="flex-1 min-h-0 flex items-stretch justify-center px-6 py-4 animate-in fade-in slide-in-from-bottom-6 duration-700">
+        <div className="w-full max-w-5xl flex flex-col bg-white dark:bg-surface-100 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.08)] border border-surface-200 overflow-hidden">
           {/* Step Header */}
-          <div className="bg-gradient-to-br from-primary-500 to-primary-600 px-10 py-12 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-[80px] animate-pulse" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary-400/20 rounded-full translate-y-1/2 -translate-x-1/2 blur-[60px]" />
-
+          <div className="shrink-0 bg-linear-to-br from-primary-500 to-primary-600 px-8 py-6 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-[60px]" />
             <div className="relative z-10 flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-black mb-2 font-display tracking-tight">{STEPS[currentStepIndex].title}</h1>
-                <p className="text-primary-100 font-bold text-lg opacity-90">{STEPS[currentStepIndex].subtitle}</p>
+                <h1 className="text-2xl font-black mb-1 font-display tracking-tight">{STEPS[currentStepIndex].title}</h1>
+                <p className="text-primary-100 font-bold text-sm opacity-90">{STEPS[currentStepIndex].subtitle}</p>
               </div>
-              <div className="hidden sm:flex w-20 h-20 bg-white/20 backdrop-blur-md rounded-[2rem] items-center justify-center text-4xl shadow-inner border border-white/20">
+              <div className="hidden sm:flex w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl items-center justify-center text-2xl shadow-inner border border-white/20">
                 {currentStep === 'path' ? '🚀' : currentStep === 'curriculum' ? '🏫' : currentStep === 'grade' ? '🎓' : '📚'}
               </div>
             </div>
           </div>
 
-          {/* Step Content */}
-          <div className="p-10">
-            <div className="mb-10 rounded-3xl border border-surface-200 bg-surface-50 p-8 flex flex-col sm:flex-row gap-6 items-center justify-between shadow-inner">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-primary-500/10 rounded-2xl flex items-center justify-center text-primary-600">
-                  <span className="text-xl">🌐</span>
-                </div>
-                <div className="text-sm font-black text-surface-900 uppercase tracking-widest">{t('setup.preferences')}</div>
+          {/* Step Content — scrollable */}
+          <div className="flex-1 min-h-0 overflow-y-auto p-6">
+            <div className="mb-6 rounded-2xl border border-surface-200 bg-surface-50 px-5 py-3 flex flex-wrap gap-4 items-center justify-between shadow-inner">
+              <div className="flex items-center gap-3">
+                <span className="text-base">🌐</span>
+                <div className="text-xs font-black text-surface-900 uppercase tracking-widest">{t('setup.preferences')}</div>
               </div>
               <div className="flex flex-wrap gap-3 items-center">
                 <label className="text-xs font-bold text-surface-400 uppercase tracking-widest">{t('controls.language')}</label>
@@ -438,7 +433,7 @@ export const UserSetupPage = () => {
                     setLanguage(next);
                     saveLanguagePreference(next);
                   }}
-                  className="px-4 py-2 rounded-xl border border-surface-200 bg-surface-100 text-sm font-bold text-surface-900 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all"
+                  className="px-3 py-1.5 rounded-xl border border-surface-200 bg-surface-100 text-sm font-bold text-surface-900 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all"
                 >
                   <option value="en">US English 🇺🇸</option>
                   <option value="es">ES Espanol 🇪🇸</option>
@@ -447,44 +442,44 @@ export const UserSetupPage = () => {
               </div>
             </div>
             {error && (
-              <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+              <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
                 <p className="text-red-500 font-bold text-sm text-center">{error}</p>
               </div>
             )}
 
             {/* Step 0: Path Selection */}
             {currentStep === ('path' as SetupStep) && (
-              <div className="space-y-4">
-                <p className="text-surface-600 mb-6 font-medium">
+              <div className="space-y-3">
+                <p className="text-surface-600 mb-4 font-medium text-sm">
                   Select your preferred learning path.
                 </p>
-                <div className="grid md:grid-cols-2 gap-8">
+                <div className="grid md:grid-cols-2 gap-5">
                   <button
                     onClick={() => selectLearningPath('standard')}
-                    className={`p-10 rounded-[2.5rem] border-4 text-left transition-all group relative overflow-hidden btn-3d ${learningPath === 'standard'
+                    className={`p-6 rounded-3xl border-4 text-left transition-all group relative overflow-hidden btn-3d ${learningPath === 'standard'
                       ? 'border-primary-500 bg-primary-50/50 shadow-[0_8px_0_0_rgba(88,204,2,0.3)]'
                       : 'border-surface-200 hover:border-primary-300 hover:bg-surface-50 shadow-[0_8px_0_0_rgba(226,232,240,1)]'
                       }`}
                   >
-                    <div className="w-16 h-16 bg-primary-500/10 rounded-2xl flex items-center justify-center text-3xl mb-8 group-hover:scale-110 transition-transform shadow-inner">
+                    <div className="w-12 h-12 bg-primary-500/10 rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform shadow-inner">
                       📖
                     </div>
-                    <h3 className="font-black text-2xl text-surface-900 mb-3 tracking-tight">School Curriculum</h3>
-                    <p className="text-base text-surface-500 font-bold leading-relaxed">Follow your school board's curriculum (CBSE, ICSE, etc.) and master your academic subjects.</p>
+                    <h3 className="font-black text-xl text-surface-900 mb-2 tracking-tight">School Curriculum</h3>
+                    <p className="text-sm text-surface-500 font-bold leading-relaxed">Follow your school board's curriculum (CBSE, ICSE, etc.) and master your academic subjects.</p>
                   </button>
 
                   <button
                     onClick={() => selectLearningPath('knowledge_hub')}
-                    className={`p-10 rounded-[2.5rem] border-4 text-left transition-all group relative overflow-hidden btn-3d ${learningPath === 'knowledge_hub'
+                    className={`p-6 rounded-3xl border-4 text-left transition-all group relative overflow-hidden btn-3d ${learningPath === 'knowledge_hub'
                       ? 'border-primary-500 bg-primary-50/50 shadow-[0_8px_0_0_rgba(88,204,2,0.3)]'
                       : 'border-surface-200 hover:border-primary-300 hover:bg-surface-50 shadow-[0_8px_0_0_rgba(226,232,240,1)]'
                       }`}
                   >
-                    <div className="w-16 h-16 bg-primary-500/10 rounded-2xl flex items-center justify-center text-3xl mb-8 group-hover:scale-110 transition-transform shadow-inner">
+                    <div className="w-12 h-12 bg-primary-500/10 rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform shadow-inner">
                       🌟
                     </div>
-                    <h3 className="font-black text-2xl text-surface-900 mb-3 tracking-tight">Knowledge Hub</h3>
-                    <p className="text-base text-surface-500 font-bold leading-relaxed">Learn anything you desire. Explore custom courses like Chess, Coding, or generate your own path.</p>
+                    <h3 className="font-black text-xl text-surface-900 mb-2 tracking-tight">Knowledge Hub</h3>
+                    <p className="text-sm text-surface-500 font-bold leading-relaxed">Learn anything you desire. Explore custom courses like Chess, Coding, or generate your own path.</p>
                   </button>
                 </div>
               </div>
@@ -497,29 +492,40 @@ export const UserSetupPage = () => {
                   {t('setup.boardHint')}
                 </p>
                 <div className="grid md:grid-cols-2 gap-6">
-                  {curricula.filter(c => c.slug !== 'knowledge-hub').map((curriculum) => (
-                    <button
-                      key={curriculum.id}
-                      onClick={() => selectCurriculum(curriculum.id)}
-                      className={`p-8 rounded-[2rem] border-4 text-left transition-all btn-3d relative overflow-hidden ${setupData.curriculumId === curriculum.id
-                        ? 'border-primary-500 bg-primary-50/50 shadow-[0_8px_0_0_rgba(88,204,2,0.3)]'
-                        : 'border-surface-200 hover:border-primary-300 hover:bg-surface-50 shadow-[0_8px_0_0_rgba(226,232,240,1)]'
+                  {curricula.filter(c => c.slug !== 'knowledge-hub').map((curriculum) => {
+                    const isAvailable = curriculum.slug === 'cbse';
+                    return (
+                      <button
+                        key={curriculum.id}
+                        onClick={() => isAvailable && selectCurriculum(curriculum.id)}
+                        disabled={!isAvailable}
+                        className={`p-8 rounded-[2rem] border-4 text-left transition-all relative overflow-hidden ${
+                          !isAvailable
+                            ? 'border-surface-200 bg-surface-50 opacity-60 cursor-not-allowed'
+                            : setupData.curriculumId === curriculum.id
+                              ? 'border-primary-500 bg-primary-50/50 shadow-[0_8px_0_0_rgba(88,204,2,0.3)] btn-3d'
+                              : 'border-surface-200 hover:border-primary-300 hover:bg-surface-50 shadow-[0_8px_0_0_rgba(226,232,240,1)] btn-3d'
                         }`}
-                    >
-                      <div className="flex justify-between items-start mb-6">
-                        <div className="w-12 h-12 bg-white dark:bg-surface-800 rounded-xl flex items-center justify-center shadow-inner text-xl">
-                          🏫
-                        </div>
-                        {setupData.curriculumId === curriculum.id && (
-                          <div className="w-6 h-6 bg-primary-500 rounded-full flex items-center justify-center text-white text-[10px] shadow-lg animate-in zoom-in">
-                            ✓
+                      >
+                        <div className="flex justify-between items-start mb-6">
+                          <div className="w-12 h-12 bg-white dark:bg-surface-800 rounded-xl flex items-center justify-center shadow-inner text-xl">
+                            🏫
                           </div>
-                        )}
-                      </div>
-                      <h3 className="font-black text-xl text-surface-900 mb-2 tracking-tight">{curriculum.name}</h3>
-                      <p className="text-sm text-surface-500 font-bold leading-relaxed">{curriculum.description}</p>
-                    </button>
-                  ))}
+                          {!isAvailable ? (
+                            <span className="text-[10px] font-black uppercase tracking-widest bg-surface-200 text-surface-500 px-2 py-1 rounded-full">
+                              Coming Soon
+                            </span>
+                          ) : setupData.curriculumId === curriculum.id && (
+                            <div className="w-6 h-6 bg-primary-500 rounded-full flex items-center justify-center text-white text-[10px] shadow-lg animate-in zoom-in">
+                              ✓
+                            </div>
+                          )}
+                        </div>
+                        <h3 className="font-black text-xl text-surface-900 mb-2 tracking-tight">{curriculum.name}</h3>
+                        <p className="text-sm text-surface-500 font-bold leading-relaxed">{curriculum.description}</p>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -537,29 +543,40 @@ export const UserSetupPage = () => {
                   </div>
                 </div>
                 <div className="grid md:grid-cols-2 gap-6">
-                  {availableGrades.map((grade) => (
-                    <button
-                      key={grade.id}
-                      onClick={() => selectGrade(grade.id)}
-                      className={`p-8 rounded-[2rem] border-4 text-left transition-all btn-3d relative overflow-hidden ${setupData.classId === grade.id
-                        ? 'border-primary-500 bg-primary-50/50 shadow-[0_8px_0_0_rgba(88,204,2,0.3)]'
-                        : 'border-surface-200 hover:border-primary-300 hover:bg-surface-50 shadow-[0_8px_0_0_rgba(226,232,240,1)]'
+                  {availableGrades.map((grade) => {
+                    const isAvailable = grade.slug === 'class-11';
+                    return (
+                      <button
+                        key={grade.id}
+                        onClick={() => isAvailable && selectGrade(grade.id)}
+                        disabled={!isAvailable}
+                        className={`p-8 rounded-[2rem] border-4 text-left transition-all relative overflow-hidden ${
+                          !isAvailable
+                            ? 'border-surface-200 bg-surface-50 opacity-60 cursor-not-allowed'
+                            : setupData.classId === grade.id
+                              ? 'border-primary-500 bg-primary-50/50 shadow-[0_8px_0_0_rgba(88,204,2,0.3)] btn-3d'
+                              : 'border-surface-200 hover:border-primary-300 hover:bg-surface-50 shadow-[0_8px_0_0_rgba(226,232,240,1)] btn-3d'
                         }`}
-                    >
-                      <div className="flex justify-between items-start mb-6">
-                        <div className="w-12 h-12 bg-white dark:bg-surface-800 rounded-xl flex items-center justify-center shadow-inner text-xl">
-                          🎓
-                        </div>
-                        {setupData.classId === grade.id && (
-                          <div className="w-6 h-6 bg-primary-500 rounded-full flex items-center justify-center text-white text-[10px] shadow-lg animate-in zoom-in">
-                            ✓
+                      >
+                        <div className="flex justify-between items-start mb-6">
+                          <div className="w-12 h-12 bg-white dark:bg-surface-800 rounded-xl flex items-center justify-center shadow-inner text-xl">
+                            🎓
                           </div>
-                        )}
-                      </div>
-                      <h3 className="font-black text-xl text-surface-900 mb-1 tracking-tight">{grade.name}</h3>
-                      <p className="text-sm text-surface-500 font-bold">{grade.description}</p>
-                    </button>
-                  ))}
+                          {!isAvailable ? (
+                            <span className="text-[10px] font-black uppercase tracking-widest bg-surface-200 text-surface-500 px-2 py-1 rounded-full">
+                              Coming Soon
+                            </span>
+                          ) : setupData.classId === grade.id && (
+                            <div className="w-6 h-6 bg-primary-500 rounded-full flex items-center justify-center text-white text-[10px] shadow-lg animate-in zoom-in">
+                              ✓
+                            </div>
+                          )}
+                        </div>
+                        <h3 className="font-black text-xl text-surface-900 mb-1 tracking-tight">{grade.name}</h3>
+                        <p className="text-sm text-surface-500 font-bold">{grade.description}</p>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -694,11 +711,11 @@ export const UserSetupPage = () => {
           </div>
 
           {/* Navigation Buttons */}
-          <div className="px-8 py-8 bg-surface-50 border-t border-surface-200 flex items-center justify-between">
+          <div className="shrink-0 px-6 py-4 bg-surface-50 border-t border-surface-200 flex items-center justify-between">
             <button
               onClick={goToPrevStep}
               disabled={!canGoPrev}
-              className={`px-8 py-3 rounded-xl font-bold text-sm uppercase tracking-widest transition-all ${canGoPrev
+              className={`px-6 py-2.5 rounded-xl font-bold text-sm uppercase tracking-widest transition-all ${canGoPrev
                 ? 'text-surface-500 hover:bg-surface-200'
                 : 'text-surface-300 cursor-not-allowed'
                 }`}
@@ -710,7 +727,7 @@ export const UserSetupPage = () => {
               <button
                 onClick={handleSubmit}
                 disabled={!canGoNext || isSubmitting}
-                className={`px-10 py-4 rounded-xl font-black text-sm uppercase tracking-[0.1em] transition-all ${canGoNext && !isSubmitting
+                className={`px-8 py-3 rounded-xl font-black text-sm uppercase tracking-widest transition-all ${canGoNext && !isSubmitting
                   ? 'bg-green-500 text-white hover:bg-green-600 shadow-lg shadow-green-500/20 active:scale-95'
                   : 'bg-surface-300 text-surface-500 cursor-not-allowed'
                   }`}
@@ -721,7 +738,7 @@ export const UserSetupPage = () => {
               <button
                 onClick={goToNextStep}
                 disabled={!canGoNext}
-                className={`px-10 py-4 rounded-xl font-black text-sm uppercase tracking-[0.1em] transition-all ${canGoNext
+                className={`px-8 py-3 rounded-xl font-black text-sm uppercase tracking-widest transition-all ${canGoNext
                   ? 'bg-primary-500 text-white hover:bg-primary-600 shadow-lg shadow-primary-500/20 active:scale-95'
                   : 'bg-surface-300 text-surface-500 cursor-not-allowed'
                   }`}

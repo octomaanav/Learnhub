@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { LearnHubLogo } from './LearnHubLogo';
 import {
   LogOut,
   Moon,
@@ -36,13 +37,8 @@ export const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/dashboard" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#069494] via-[#047c7c] to-[#035f5f] rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-              <span className="text-white text-base font-bold">L</span>
-            </div>
-            <span className="text-xl font-black bg-gradient-to-r from-[#047c7c] to-[#069494] bg-clip-text text-transparent dark:from-[#069494] dark:to-[#0bc5c5]">
-              LearnHub
-            </span>
+          <Link to="/dashboard" className="group transition-opacity hover:opacity-80">
+            <LearnHubLogo size={36} animated showText />
           </Link>
 
           {/* Right Section */}

@@ -205,10 +205,10 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
   }
 
   /**
-   * Send realtime input (audio/video chunks)
+   * Send realtime input (audio/video chunks). No-ops if session is disconnected.
    */
   sendRealtimeInput(chunks: Array<{ mimeType: string; data: string }>) {
-    if (!this._session) {
+    if (!this._session || this._status !== "connected") {
       return;
     }
 
@@ -217,9 +217,12 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
         this._session.sendRealtimeInput({ media: ch });
       } catch (error: any) {
         console.error('[Gemini Live] Error sending chunk:', error?.message);
+        this._status = "disconnected";
+        this._session = null;
+        this.emit("error", error instanceof Error ? error : new Error(String(error)));
+        break;
       }
     }
-    // Skip logging realtime input to avoid flooding the event bus
   }
 
   /**
@@ -227,13 +230,25 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
    */
   sendToolResponse(toolResponse: any) {
     if (
-      toolResponse.functionResponses &&
-      toolResponse.functionResponses.length
+      !toolResponse.functionResponses ||
+      toolResponse.functionResponses.length === 0
     ) {
-      this._session?.sendToolResponse({
+      return;
+    }
+    if (!this._session) {
+      console.warn("[Gemini Live] sendToolResponse called but session is null");
+      return;
+    }
+    try {
+      this._session.sendToolResponse({
         functionResponses: toolResponse.functionResponses,
       });
       this.log(`client.toolResponse`, toolResponse);
+    } catch (error: any) {
+      console.error("[Gemini Live] sendToolResponse failed:", error?.message);
+      this._status = "disconnected";
+      this._session = null;
+      this.emit("error", error instanceof Error ? error : new Error(String(error)));
     }
   }
 
@@ -241,10 +256,21 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
    * Send normal content parts (text)
    */
   send(parts: Part | Part[], turnComplete: boolean = true) {
-    this._session?.sendClientContent({ turns: parts, turnComplete });
-    this.log(`client.send`, {
-      turns: Array.isArray(parts) ? parts : [parts],
-      turnComplete,
-    });
+    if (!this._session) {
+      console.warn("[Gemini Live] send called but session is null");
+      return;
+    }
+    try {
+      this._session.sendClientContent({ turns: parts, turnComplete });
+      this.log(`client.send`, {
+        turns: Array.isArray(parts) ? parts : [parts],
+        turnComplete,
+      });
+    } catch (error: any) {
+      console.error("[Gemini Live] send failed:", error?.message);
+      this._status = "disconnected";
+      this._session = null;
+      this.emit("error", error instanceof Error ? error : new Error(String(error)));
+    }
   }
 }

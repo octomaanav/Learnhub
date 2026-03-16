@@ -119,7 +119,7 @@ export const toolDeclarations: FunctionDeclaration[] = [
   },
   {
     name: "toggleFocusMode",
-    description: "Enable or disable focus mode for distraction-free learning",
+    description: "Activate Pulse mode — a full-screen immersive voice learning experience. Call this when the user says 'focus mode', 'zen mode', 'pulse mode', 'distraction-free', or 'let's start learning' from the main dashboard.",
     parameters: {
       type: Type.OBJECT,
       properties: {
